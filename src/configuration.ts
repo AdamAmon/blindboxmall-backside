@@ -3,20 +3,21 @@ import * as koa from '@midwayjs/koa';
 import * as validate from '@midwayjs/validate';
 import * as info from '@midwayjs/info';
 import { join } from 'path';
-// import { DefaultErrorFilter } from './filter/default.filter';
-// import { NotFoundFilter } from './filter/notfound.filter';
 import { ReportMiddleware } from './middleware/report.middleware';
-//import * as staticFile from '@midwayjs/static-file';
-import * as crossDomain from '@midwayjs/cross-domain';
+import * as crossDomain from '@midwayjs/cross-domain'; // 跨域模块
 import * as busboy from '@midwayjs/busboy';
+import * as jwt from '@midwayjs/jwt';
+import { AuthMiddleware } from './middleware/auth.middleware';
+import * as typeorm from '@midwayjs/typeorm';
 
 @Configuration({
   imports: [
     koa,
+    typeorm,
     validate,
-    //staticFile,
     crossDomain,
     busboy,
+    jwt,
     {
       component: info,
       enabledEnvironment: ['local'],
@@ -29,9 +30,10 @@ export class MainConfiguration {
   app: koa.Application;
 
   async onReady() {
-    // add middleware
-    this.app.useMiddleware([ReportMiddleware]);
-    // add filter
-    // this.app.useFilter([NotFoundFilter, DefaultErrorFilter]);
+    // 确保中间件正确加载顺序
+    this.app.useMiddleware([
+      ReportMiddleware,
+      AuthMiddleware,
+    ]);
   }
 }

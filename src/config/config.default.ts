@@ -16,11 +16,23 @@ export default {
         logging: true,
         entities: ['**/entity/*.entity{.ts,.js}'],
       }
-    },
+    }
+  },
+  jwt: {
+    secret: process.env.JWT_SECRET || 'default_secret_key',
+    expiresIn: '30d',
+    ignoreExpiration: false,
+  },
+  // 跨域配置
+  crossDomain: {
+    allowHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowOrigins: ['http://localhost:5173'], // 前端地址
+    credentials: true,
+  }
     // staticFile: {
     //   dirs: {
     //     default: { prefix: '/', dir: 'public' } // 前端构建产物目录
     //   }
     // },
-  }
 } as MidwayConfig;
