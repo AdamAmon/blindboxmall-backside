@@ -41,4 +41,24 @@ export class UserService {
 
     return user;
   }
+
+  // getUser 方法
+  async getUser(condition: { id: number }) {
+    // 参数校验
+    if (!condition.id) {
+      throw new MidwayHttpError('缺少用户ID参数', 400);
+    }
+
+    const user = await this.userModel.findOne({
+      where: { id: condition.id }
+    });
+
+    if (!user) {
+      throw new MidwayHttpError('用户不存在', 404);
+    }
+
+    // 移除敏感数据
+    const { password, ...safeUser } = user;
+    return safeUser;
+  }
 }
