@@ -1,4 +1,3 @@
-//:src/middleware/auth.middleware.ts
 import { Middleware } from '@midwayjs/core';
 import { NextFunction, Context } from '@midwayjs/koa';
 import * as jwt from 'jsonwebtoken';
@@ -7,13 +6,19 @@ import * as jwt from 'jsonwebtoken';
 export class AuthMiddleware {
   resolve() {
     return async (ctx: Context, next: NextFunction) => {
-      // 排除登录/注册路由
-      if (ctx.path === '/auth/login' || ctx.path === '/auth/register') {
+      // 排除不需要认证的路由
+      const noAuthPaths = ['/auth/login', '/auth/register'];
+      if (noAuthPaths.includes(ctx.path)) {
         await next();
         return;
       }
 
-      const token = ctx.headers.authorization?.split(' ')[1];
+      const authHeader = ctx.headers.authorization;
+      let token = '';
+      if (authHeader && typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7);
+      }
+
       if (!token) {
         ctx.status = 401;
         ctx.body = { message: '未提供认证令牌' };
@@ -23,12 +28,13 @@ export class AuthMiddleware {
       try {
         const config = ctx.app.getConfig();
         const decoded = jwt.verify(token, config.jwt.secret);
-        ctx.user = decoded; // 将用户信息附加到上下文
-        await next();
+        ctx.user = decoded; // 附加用户信息到上下文
       } catch (err) {
         ctx.status = 401;
         ctx.body = { message: '无效或过期的令牌' };
+        return;
       }
+      await next(); // 关键修改：验证后交给后续处理
     };
   }
 
