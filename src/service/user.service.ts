@@ -68,7 +68,9 @@ export class UserService {
 
   // 更新用户信息
   async updateUser(dto: any) {
+    console.log('updateUser dto:', dto);
     const user = await this.userModel.findOne({ where: { id: dto.id } });
+    console.log('before update:', user);
     if (!user) throw new MidwayHttpError('用户不存在', 404);
     // 只允许更新部分字段
     const { nickname, avatar, email, phone } = dto;
@@ -76,17 +78,28 @@ export class UserService {
     if (avatar !== undefined) user.avatar = avatar;
     if (email !== undefined) user.email = email;
     if (phone !== undefined) user.phone = phone;
-    return this.userModel.save(user);
+    const saved = await this.userModel.save(user);
+    console.log('after update:', saved);
+    return saved;
   }
 
   // 新增地址
-  async createAddress(userId: number, dto: any) {
+  async createAddress(userId: number, dto: any): Promise<UserAddress> {
     if (dto.is_default) {
       // 取消原有默认地址
       await this.addressModel.update({ user_id: userId, is_default: true }, { is_default: false });
     }
+    // 如果 dto 是数组，抛出异常，强制只允许对象
+    if (Array.isArray(dto)) {
+      throw new Error('createAddress 只支持单个地址对象');
+    }
     const address = this.addressModel.create({ ...dto, user_id: userId });
-    return this.addressModel.save(address);
+    // save 传入单个对象，返回单个对象或数组，若为数组则取第一个
+    const result = await this.addressModel.save(address);
+    if (Array.isArray(result)) {
+      return result[0];
+    }
+    return result;
   }
 
   // 更新地址
