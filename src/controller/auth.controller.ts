@@ -4,7 +4,7 @@ import { UserService } from '../service/user.service';
 import { AuthService } from '../service/auth.service';
 import { RegisterDTO } from '../dto/user.dto'; // 需创建DTO
 
-@Controller('/auth')
+@Controller('/api/auth')
 export class AuthController {
   @Inject()
   userService: UserService;
