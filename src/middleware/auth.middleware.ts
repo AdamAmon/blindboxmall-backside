@@ -7,7 +7,7 @@ export class AuthMiddleware {
   resolve() {
     return async (ctx: Context, next: NextFunction) => {
       // 排除不需要认证的路由
-      const noAuthPaths = ['/auth/login', '/auth/register'];
+      const noAuthPaths = ['/auth/login', '/auth/register', '/api/auth/login', '/api/auth/register'];
       if (noAuthPaths.includes(ctx.path)) {
         await next();
         return;

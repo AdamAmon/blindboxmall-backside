@@ -27,6 +27,12 @@ export class User {
   @Column({ length: 20, nullable: true })
   phone?: string;
 
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  balance: number;
+
+  @Column({ type: 'int', nullable: true })
+  default_address_id?: number;
+
   @CreateDateColumn()
   created_at: Date;
 
