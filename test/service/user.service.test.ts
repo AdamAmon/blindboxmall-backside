@@ -1,7 +1,8 @@
 import { createApp, close } from '@midwayjs/mock';
 import { Framework } from '@midwayjs/koa';
-import { UserService } from '../../src';
+import { UserService } from '../../src/service/user/user.service';
 import * as bcrypt from 'bcryptjs';
+import { describe, it, expect, beforeAll, afterAll, afterEach, beforeEach } from '@jest/globals';
 
 // 类型化的测试用户数据
 const TEST_USER = {
@@ -29,6 +30,7 @@ describe('test/service/user.service.test.ts', () => {
 
   // 清理测试数据
   afterEach(async () => {
+    // 只删除数据库中的测试用户，不对 TEST_USER 常量做 delete 操作
     await userService.userModel.delete({ username: TEST_USER.username });
   });
 
@@ -59,8 +61,7 @@ describe('test/service/user.service.test.ts', () => {
     });
 
     it('should set default role to customer', async () => {
-      const newUser = { ...TEST_USER };
-      delete newUser.role;
+      const { role, ...newUser } = TEST_USER;
       const user = await userService.createUser(newUser);
       expect(user.role).toBe('customer');
     });

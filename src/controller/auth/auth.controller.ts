@@ -1,8 +1,8 @@
 //:src/controller/auth.controller.ts
 import { Controller, Inject, Post, Body } from '@midwayjs/core';
-import { UserService } from '../service/user.service';
-import { AuthService } from '../service/auth.service';
-import { RegisterDTO } from '../dto/user.dto'; // 需创建DTO
+import { UserService } from '../../service/user/user.service';
+import { AuthService } from '../../service/auth/auth.service';
+import { RegisterDTO } from '../../dto/user/user.dto'; // 需创建DTO
 
 @Controller('/api/auth')
 export class AuthController {
