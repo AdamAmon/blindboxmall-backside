@@ -11,9 +11,7 @@ export default {
         database: ':memory:', // 使用内存数据库
         synchronize: true,
         logging: false,
-        entities: [
-          '**/entity/*.entity{.ts,.js}'
-        ],
+        entities: ['**/entity/**/*.entity{.ts,.js}'],
       }
     }
   },

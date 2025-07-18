@@ -1,8 +1,8 @@
 // ... existing code ...
 import { Provide, Inject, Config } from '@midwayjs/core';  // Add Config import
-import { UserService } from './user.service';
+import { UserService } from '../../service/user/user.service';
 import * as jwt from 'jsonwebtoken';
-import { User } from '../entity/user.entity';
+import { User } from '../../entity/user/user.entity';
 // Deleted:import { IConfigService } from '@midwayjs/core';  // Remove this
 
 @Provide()

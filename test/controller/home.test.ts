@@ -1,7 +1,8 @@
 import { createApp, close, createHttpRequest } from '@midwayjs/mock';
 import { Framework, IMidwayKoaApplication } from '@midwayjs/koa';
-import { AuthService } from '../../src/service/auth.service';
-import { UserService } from '../../src';
+import { AuthService } from '../../src/service/auth/auth.service';
+import { UserService } from '../../src/service/user/user.service';
+import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 
 describe('test/controller/home.test.ts', () => {
   let app: IMidwayKoaApplication;

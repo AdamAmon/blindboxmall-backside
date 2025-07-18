@@ -14,7 +14,7 @@ export default {
         database: path.join(__dirname, '../../data.sqlite'), // 数据库路径
         synchronize: true, // 自动同步实体
         logging: true,
-        entities: ['**/entity/*.entity{.ts,.js}'],
+        entities: ['**/entity/**/*.entity{.ts,.js}'],
       }
     }
   },
