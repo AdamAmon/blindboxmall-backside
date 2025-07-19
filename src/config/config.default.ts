@@ -33,14 +33,18 @@ export default {
   },
   alipay: {
     appId: '9021000149679684',
-    privateKey: fs.readFileSync(
-      path.join(__dirname, '../../private_key.pem'),
-      'utf8'
-    ),
-    alipayPublicKey: fs.readFileSync(
-      path.join(__dirname, '../../public_key.pem'),
-      'utf8'
-    ),
+    privateKey: process.env.NODE_ENV === 'unittest' 
+      ? 'test-private-key' 
+      : fs.readFileSync(
+          path.join(__dirname, '../../private_key.pem'),
+          'utf8'
+        ),
+    alipayPublicKey: process.env.NODE_ENV === 'unittest'
+      ? 'test-public-key'
+      : fs.readFileSync(
+          path.join(__dirname, '../../public_key.pem'),
+          'utf8'
+        ),
     gateway: 'https://openapi-sandbox.dl.alipaydev.com/gateway.do',
     notifyUrl: 'http://f67afa32.natappfree.cc/api/pay/notify',
     charset: 'utf-8',
