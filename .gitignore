@@ -11,3 +11,42 @@ run/
 *.un~
 .tsbuildinfo
 .tsbuildinfo.*
+
+# 支付宝密钥文件
+*.pem
+*.key
+*.p12
+*.pfx
+alipay_private_key.txt
+alipay_public_key.txt
+alipay_keys/
+keys/
+certificates/
+
+# 环境变量文件
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# 数据库文件（生产环境）
+data.sqlite
+*.db
+*.sqlite
+*.sqlite3
+
+# 日志文件
+*.log
+logs/
+
+# IDE 和编辑器文件
+.vscode/
+*.sublime-*
+.atom/
+.brackets.json
+
+# 操作系统文件
+Thumbs.db
+ehthumbs.db
+Desktop.ini
