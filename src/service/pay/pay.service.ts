@@ -183,7 +183,7 @@ export class PayService {
     // 更新用户余额
     const user = await this.userModel.findOne({ where: { id: record.recharge_user_id } });
     if (user) {
-      const oldBalance = user.balance;
+      // const oldBalance = user.balance;
       user.balance = Number(user.balance) + Number(record.recharge_amount);
       await this.userModel.save(user);
       // console.log('[调试] handleAlipayNotify 用户余额更新:', oldBalance, '->', user.balance);
