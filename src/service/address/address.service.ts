@@ -12,7 +12,10 @@ export class AddressService {
   // 创建地址
   async createAddress(userId: number, dto: any): Promise<UserAddress> {
     if (dto.is_default) {
-      await this.addressModel.update({ user_id: userId, is_default: true }, { is_default: false });
+      await this.addressModel.update(
+        { user_id: userId, is_default: true },
+        { is_default: false }
+      );
     }
     if (Array.isArray(dto)) {
       throw new Error('createAddress 只支持单个地址对象');
@@ -27,10 +30,15 @@ export class AddressService {
 
   // 更新地址
   async updateAddress(userId: number, dto: any) {
-    const address = await this.addressModel.findOne({ where: { id: dto.id, user_id: userId, is_deleted: false } });
+    const address = await this.addressModel.findOne({
+      where: { id: dto.id, user_id: userId, is_deleted: false },
+    });
     if (!address) throw new MidwayHttpError('地址不存在', 404);
     if (dto.is_default) {
-      await this.addressModel.update({ user_id: userId, is_default: true }, { is_default: false });
+      await this.addressModel.update(
+        { user_id: userId, is_default: true },
+        { is_default: false }
+      );
     }
     Object.assign(address, dto);
     return this.addressModel.save(address);
@@ -38,7 +46,9 @@ export class AddressService {
 
   // 删除地址
   async deleteAddress(userId: number, id: number) {
-    const address = await this.addressModel.findOne({ where: { id, user_id: userId, is_deleted: false } });
+    const address = await this.addressModel.findOne({
+      where: { id, user_id: userId, is_deleted: false },
+    });
     if (!address) throw new MidwayHttpError('地址不存在', 404);
     address.is_deleted = true;
     return this.addressModel.save(address);
@@ -46,17 +56,25 @@ export class AddressService {
 
   // 获取地址列表
   async listAddresses(userId: number) {
-    return this.addressModel.find({ where: { user_id: userId, is_deleted: false }, order: { is_default: 'DESC', id: 'DESC' } });
+    return this.addressModel.find({
+      where: { user_id: userId, is_deleted: false },
+      order: { is_default: 'DESC', id: 'DESC' },
+    });
   }
 
   // 设置默认地址
   async setDefaultAddress(userId: number, id: number) {
-    const address = await this.addressModel.findOne({ where: { id, user_id: userId, is_deleted: false } });
+    const address = await this.addressModel.findOne({
+      where: { id, user_id: userId, is_deleted: false },
+    });
     if (!address) throw new MidwayHttpError('地址不存在', 404);
-    await this.addressModel.update({ user_id: userId, is_default: true }, { is_default: false });
+    await this.addressModel.update(
+      { user_id: userId, is_default: true },
+      { is_default: false }
+    );
     address.is_default = true;
     await this.addressModel.save(address);
     // 注意：如需同步到 user 表，请在 controller/service 层注入 UserService 处理
     return address;
   }
-} 
+}

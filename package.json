@@ -44,8 +44,8 @@
   },
   "scripts": {
     "dev": "cross-env NODE_ENV=local mwtsc --watch --run @midwayjs/mock/app.js",
-    "test": "cross-env NODE_ENV=unittest jest --runInBand --forceExit",
-    "test:cov": "cross-env NODE_ENV=unittest jest --coverage",
+    "test": "cross-env NODE_ENV=unittest jest --runInBand --forceExit --detectOpenHandles",
+    "test:cov": "cross-env NODE_ENV=unittest jest --coverage --detectOpenHandles",
     "test:watch": "cross-env NODE_ENV=unittest jest --watch",
     "test:clean": "cross-env NODE_ENV=unittest jest --coverage --clean",
     "cov": "jest --coverage",

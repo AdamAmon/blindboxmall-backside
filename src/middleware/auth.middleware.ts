@@ -7,7 +7,11 @@ export class AuthMiddleware {
   resolve() {
     return async (ctx: Context, next: NextFunction) => {
       // 排除不需要认证的路由
-      const noAuthPaths = ['/api/auth/login', '/api/auth/register', '/api/pay/notify'];
+      const noAuthPaths = [
+        '/api/auth/login',
+        '/api/auth/register',
+        '/api/pay/notify',
+      ];
       if (noAuthPaths.includes(ctx.path)) {
         await next();
         return;
@@ -15,7 +19,11 @@ export class AuthMiddleware {
 
       const authHeader = ctx.headers.authorization;
       let token = '';
-      if (authHeader && typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
+      if (
+        authHeader &&
+        typeof authHeader === 'string' &&
+        authHeader.startsWith('Bearer ')
+      ) {
         token = authHeader.substring(7);
       }
 

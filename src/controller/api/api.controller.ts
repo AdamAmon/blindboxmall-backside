@@ -1,4 +1,4 @@
-import { Controller, Inject} from '@midwayjs/core';
+import { Controller, Inject } from '@midwayjs/core';
 import { UserService } from '../../service/user/user.service';
 
 @Controller('/api')
@@ -16,5 +16,4 @@ export class APIController {
   //     data: user
   //   };
   // }
-
 }

@@ -9,7 +9,7 @@ import * as busboy from '@midwayjs/busboy';
 import * as jwt from '@midwayjs/jwt';
 import { AuthMiddleware } from './middleware/auth.middleware';
 import * as typeorm from '@midwayjs/typeorm';
-import {DefaultErrorFilter} from "./filter/default.filter";
+import { DefaultErrorFilter } from './filter/default.filter';
 
 @Configuration({
   imports: [
@@ -32,10 +32,7 @@ export class MainConfiguration {
 
   async onReady() {
     // 确保中间件正确加载顺序
-    this.app.useMiddleware([
-      ReportMiddleware,
-      AuthMiddleware,
-    ]);
+    this.app.useMiddleware([ReportMiddleware, AuthMiddleware]);
     // 添加全局错误过滤器
     this.app.useFilter([DefaultErrorFilter]);
   }

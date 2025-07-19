@@ -11,15 +11,18 @@ export class UserService {
   @InjectEntityModel(User)
   userModel: Repository<User>;
 
-
-
   // 创建用户
   async createUser(userData: any) {
-    const existing = await this.userModel.findOne({ where: { username: userData.username } });
+    const existing = await this.userModel.findOne({
+      where: { username: userData.username },
+    });
     if (existing) throw new MidwayHttpError('用户名已存在', 400);
 
     // Validate role if provided
-    if (userData.role && !['customer', 'seller', 'admin'].includes(userData.role)) {
+    if (
+      userData.role &&
+      !['customer', 'seller', 'admin'].includes(userData.role)
+    ) {
       throw new MidwayHttpError('无效的用户角色', 400);
     }
 
@@ -29,7 +32,7 @@ export class UserService {
     return this.userModel.save({
       ...userData,
       password: hashedPassword,
-      role: userData.role || 'customer'
+      role: userData.role || 'customer',
     });
   }
 
@@ -52,7 +55,7 @@ export class UserService {
     }
 
     const user = await this.userModel.findOne({
-      where: { id: condition.id }
+      where: { id: condition.id },
     });
 
     if (!user) {
@@ -60,7 +63,8 @@ export class UserService {
     }
 
     // 移除敏感数据
-    const { password, ...safeUser } = user;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password: _, ...safeUser } = user;
     return safeUser;
   }
 
@@ -80,5 +84,4 @@ export class UserService {
     console.log('after update:', saved);
     return saved;
   }
-
 }

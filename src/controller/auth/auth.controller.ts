@@ -21,15 +21,18 @@ export class AuthController {
         id: user.id,
         username: user.username,
         nickname: user.nickname,
-        avatar: user.avatar || '/default-avatar.png'
+        avatar: user.avatar || '/default-avatar.png',
       },
-      message: '注册成功'
+      message: '注册成功',
     };
   }
 
   @Post('/login')
-  async login(@Body() body: { username: string, password: string }) {
-    const user = await this.userService.validateUser(body.username, body.password);
+  async login(@Body() body: { username: string; password: string }) {
+    const user = await this.userService.validateUser(
+      body.username,
+      body.password
+    );
     const token = await this.authService.generateToken(user);
 
     return {
@@ -41,10 +44,10 @@ export class AuthController {
           username: user.username,
           nickname: user.nickname,
           avatar: user.avatar,
-          role: user.role
-        }
+          role: user.role,
+        },
       },
-      message: '登录成功'
+      message: '登录成功',
     };
   }
 }
