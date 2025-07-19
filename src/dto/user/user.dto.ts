@@ -16,13 +16,17 @@ export class RegisterDTO {
   @Rule(RuleType.string().email().allow(null, '').optional())
   email?: string;
 
-  @Rule(RuleType.string().pattern(/^1[3-9]\d{9}$/).allow(null, '').optional())
+  @Rule(
+    RuleType.string()
+      .pattern(/^1[3-9]\d{9}$/)
+      .allow(null, '')
+      .optional()
+  )
   phone?: string;
 
-  @Rule(RuleType.string().valid('customer', 'seller', 'admin',).optional())
+  @Rule(RuleType.string().valid('customer', 'seller', 'admin').optional())
   role?: string;
 }
-
 
 export class UpdateUserDTO {
   @Rule(RuleType.number().required())
@@ -37,6 +41,11 @@ export class UpdateUserDTO {
   @Rule(RuleType.string().email().allow(null, '').optional())
   email?: string;
 
-  @Rule(RuleType.string().pattern(/^1[3-9]\d{9}$/).allow(null, '').optional())
+  @Rule(
+    RuleType.string()
+      .pattern(/^1[3-9]\d{9}$/)
+      .allow(null, '')
+      .optional()
+  )
   phone?: string;
 }

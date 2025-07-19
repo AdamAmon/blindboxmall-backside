@@ -15,8 +15,8 @@ export default {
         synchronize: true,
         logging: false,
         entities: [User, UserAddress, Recharge],
-      }
-    }
+      },
+    },
   },
   // 添加JWT配置
   jwt: {
@@ -26,8 +26,8 @@ export default {
   // 添加安全配置
   security: {
     csrf: {
-      enable: false // 测试环境禁用CSRF保护
-    }
+      enable: false, // 测试环境禁用CSRF保护
+    },
   },
   // 添加支付宝测试配置
   alipay: {
@@ -36,5 +36,5 @@ export default {
     alipayPublicKey: 'test-public-key',
     gateway: 'https://openapi.alipaydev.com/gateway.do',
     notifyUrl: 'http://test.com/notify',
-  }
+  },
 } as MidwayConfig;

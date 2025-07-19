@@ -5,7 +5,7 @@ import { Context } from '@midwayjs/koa';
 export class DefaultErrorFilter {
   async catch(err: Error | MidwayHttpError, ctx: Context) {
     // 设置 HTTP 状态码
-    const status = (err instanceof MidwayHttpError) ? err.status : 500;
+    const status = err instanceof MidwayHttpError ? err.status : 500;
     ctx.status = status;
 
     // 返回统一的 JSON 格式
