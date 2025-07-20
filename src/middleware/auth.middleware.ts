@@ -11,6 +11,8 @@ export class AuthMiddleware {
         '/api/auth/login',
         '/api/auth/register',
         '/api/pay/notify',
+        '/api/blindbox/test', // 添加测试路径
+        '/api/blindbox/debug', // 添加调试路径
       ];
       if (noAuthPaths.includes(ctx.path)) {
         await next();
@@ -35,8 +37,13 @@ export class AuthMiddleware {
 
       try {
         const config = ctx.app.getConfig();
-        const decoded = jwt.verify(token, config.jwt.secret);
-        ctx.user = decoded; // 附加用户信息到上下文
+        const decoded = jwt.verify(token, config.jwt.secret) as any;
+        // 将JWT中的userId映射为id，保持向后兼容
+        ctx.user = {
+          id: decoded.userId,
+          role: decoded.role,
+          ...decoded
+        };
       } catch (err) {
         ctx.status = 401;
         ctx.body = { message: '无效或过期的令牌' };
