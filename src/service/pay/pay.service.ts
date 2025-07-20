@@ -22,7 +22,7 @@ export class PayService {
     const params: Record<string, string> = {};
 
     // 如果字符串包含&，按query string解析
-    if (str.includes('&')) {
+    if (typeof str === 'string' && str.includes('&')) {
       for (const [k, v] of new URLSearchParams(str)) {
         params[k] = v;
       }
@@ -35,7 +35,7 @@ export class PayService {
       } catch (e) {
         // console.warn('[调试] parseQueryString JSON解析失败:', e);
         // 如果JSON解析失败，尝试其他格式
-        if (str.includes('=')) {
+        if (typeof str === 'string' && str.includes('=')) {
           for (const [k, v] of new URLSearchParams(str)) {
             params[k] = v;
           }
@@ -67,6 +67,12 @@ export class PayService {
     userId: number,
     amount: number
   ): Promise<{ record: Recharge; payUrl: string }> {
+    if (!userId || isNaN(userId)) {
+      throw new MidwayHttpError('缺少或非法 userId 参数', 400);
+    }
+    if (!amount || isNaN(amount) || amount <= 0) {
+      throw new MidwayHttpError('缺少或非法 amount 参数', 400);
+    }
     try {
       // console.log('[调试] createRechargeOrder 入参:', { userId, amount });
       const user = await this.userModel.findOne({ where: { id: userId } });
@@ -103,12 +109,17 @@ export class PayService {
 
       let payUrl;
       try {
-        // console.log('[调试] alipaySdk.pageExecute 参数:', { bizContent, notifyUrl: this.alipayConfig.notifyUrl });
-        payUrl = await alipaySdk.pageExecute('alipay.trade.page.pay', 'GET', {
-          bizContent,
-          notifyUrl: this.alipayConfig.notifyUrl,
-        });
-        // console.log('[调试] alipaySdk.pageExecute payUrl:', payUrl);
+        // 测试模式下的模拟响应
+        if (this.alipayConfig.testMode && this.alipayConfig.mockResponse) {
+          payUrl = `https://openapi.alipaydev.com/gateway.do?mock=true&out_trade_no=${outTradeNo}&total_amount=${amount.toFixed(2)}`;
+        } else {
+          // console.log('[调试] alipaySdk.pageExecute 参数:', { bizContent, notifyUrl: this.alipayConfig.notifyUrl });
+          payUrl = await alipaySdk.pageExecute('alipay.trade.page.pay', 'GET', {
+            bizContent,
+            notifyUrl: this.alipayConfig.notifyUrl,
+          });
+          // console.log('[调试] alipaySdk.pageExecute payUrl:', payUrl);
+        }
       } catch (payErr) {
         console.error('[调试] alipaySdk.pageExecute 下单异常:', payErr);
         throw new MidwayHttpError('支付宝下单失败: ' + payErr.message, 500);
@@ -123,6 +134,9 @@ export class PayService {
 
   // 充值记录查询
   async getRechargeRecords(userId: number) {
+    if (!userId || isNaN(userId)) {
+      throw new MidwayHttpError('缺少或非法 userId 参数', 400);
+    }
     try {
       const result = await this.rechargeModel.find({
         where: { recharge_user_id: userId },

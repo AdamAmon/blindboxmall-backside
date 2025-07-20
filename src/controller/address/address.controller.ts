@@ -5,6 +5,8 @@ import {
   UpdateAddressDTO,
   DeleteAddressDTO,
 } from '../../dto/address/address.dto';
+import { MidwayHttpError } from '@midwayjs/core';
+import { Context } from '@midwayjs/koa';
 
 @Controller('/api/address')
 export class AddressController {
@@ -14,34 +16,125 @@ export class AddressController {
   @Post('/create')
   async createAddress(
     @Body() dto: CreateAddressDTO,
-    @Query('userId') userId: number
+    @Query('userId') userId: number,
+    ctx: Context
   ) {
-    const address = await this.addressService.createAddress(userId, dto);
-    return { success: true, data: address };
+    try {
+      let realUserId = userId;
+      if ((!realUserId || isNaN(realUserId)) && ((dto as unknown as Record<string, unknown>).user_id)) {
+        realUserId = (dto as unknown as Record<string, unknown>).user_id as number;
+        delete (dto as unknown as Record<string, unknown>).user_id; // 移除 user_id，避免DTO校验422
+      }
+      if ((!realUserId || isNaN(realUserId)) && ctx.user && ctx.user.id) {
+        realUserId = ctx.user.id;
+      }
+      if (!realUserId || isNaN(realUserId)) {
+        ctx.status = 400;
+        return { success: false, message: '缺少或非法用户ID', data: null };
+      }
+      const address = await this.addressService.createAddress(realUserId, dto);
+      return { success: true, data: address };
+    } catch (error) {
+      ctx.status = 500;
+      return { success: false, message: error.message, data: null };
+    }
   }
 
   @Post('/update')
   async updateAddress(
     @Body() dto: UpdateAddressDTO,
-    @Query('userId') userId: number
+    @Query('userId') userId: number,
+    ctx: Context
   ) {
-    const address = await this.addressService.updateAddress(userId, dto);
-    return { success: true, data: address };
+    try {
+      let realUserId = userId;
+      if ((!realUserId || isNaN(realUserId)) && ((dto as unknown as Record<string, unknown>).user_id)) {
+        realUserId = (dto as unknown as Record<string, unknown>).user_id as number;
+      }
+      if ((!realUserId || isNaN(realUserId)) && ctx.user && ctx.user.id) {
+        realUserId = ctx.user.id;
+      }
+      if (!realUserId || isNaN(realUserId)) {
+        ctx.status = 400;
+        return { success: false, message: '缺少或非法用户ID', data: null };
+      }
+      const address = await this.addressService.updateAddress(realUserId, dto);
+      return { success: true, data: address };
+    } catch (error) {
+      if (error.status === 404 || error.message === '地址不存在') {
+        ctx.status = 404;
+        return { success: false, message: error.message, data: null };
+      }
+      ctx.status = 500;
+      return { success: false, message: error.message, data: null };
+    }
   }
 
   @Post('/delete')
   async deleteAddress(
     @Body() dto: DeleteAddressDTO,
-    @Query('userId') userId: number
+    @Query('userId') userId: number,
+    ctx: Context
   ) {
-    const result = await this.addressService.deleteAddress(userId, dto.id);
-    return { success: true, data: result };
+    try {
+      let realUserId = userId;
+      if ((!realUserId || isNaN(realUserId)) && ((dto as unknown as Record<string, unknown>).user_id)) {
+        realUserId = (dto as unknown as Record<string, unknown>).user_id as number;
+      }
+      if ((!realUserId || isNaN(realUserId)) && ctx.user && ctx.user.id) {
+        realUserId = ctx.user.id;
+      }
+      if (!realUserId || isNaN(realUserId)) {
+        ctx.status = 400;
+        return { success: false, message: '缺少或非法用户ID', data: null };
+      }
+      const result = await this.addressService.deleteAddress(realUserId, dto.id);
+      if (!result) {
+        ctx.status = 404;
+        return { success: false, message: '地址不存在', data: null };
+      }
+      return { success: true, data: result };
+    } catch (error) {
+      if (error.status === 404 || error.message === '地址不存在') {
+        ctx.status = 404;
+        return { success: false, message: error.message, data: null };
+      }
+      ctx.status = 500;
+      return { success: false, message: error.message, data: null };
+    }
   }
 
   @Get('/list')
-  async listAddresses(@Query('userId') userId: number) {
-    const list = await this.addressService.listAddresses(userId);
-    return { success: true, data: list };
+  async list(@Query('userId') userId: number, ctx: Context) {
+    try {
+      let realUserId = userId;
+      if ((!realUserId || isNaN(realUserId)) && ctx.user && ctx.user.id) {
+        realUserId = ctx.user.id;
+      }
+      if (!realUserId || isNaN(realUserId)) {
+        return { success: false, message: '缺少或非法用户ID', data: null };
+      }
+      const list = await this.addressService.listAddresses(realUserId);
+      return { success: true, data: list };
+    } catch (error) {
+      return { success: false, message: error.message, data: null };
+    }
+  }
+
+  @Get('/detail')
+  async detail(@Query('id') id: string) {
+    if (!id || isNaN(Number(id))) {
+      throw new MidwayHttpError('id参数非法', 400);
+    }
+    try {
+      const address = await this.addressService.addressModel.findOne({ where: { id: Number(id) } });
+      if (!address) {
+        return { success: false, message: '地址不存在', data: null };
+      }
+      return { success: true, data: address };
+    } catch (error) {
+      return { success: false, message: error.message, data: null };
+    }
   }
 
   @Post('/set_default')
@@ -49,7 +142,11 @@ export class AddressController {
     @Body() dto: DeleteAddressDTO,
     @Query('userId') userId: number
   ) {
-    const address = await this.addressService.setDefaultAddress(userId, dto.id);
-    return { success: true, data: address };
+    try {
+      const address = await this.addressService.setDefaultAddress(userId, dto.id);
+      return { success: true, data: address };
+    } catch (error) {
+      return { success: false, message: error.message, data: null };
+    }
   }
 }

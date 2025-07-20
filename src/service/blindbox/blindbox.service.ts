@@ -1,4 +1,4 @@
-import { Provide, Inject } from '@midwayjs/core';
+import { Provide } from '@midwayjs/core';
 import { InjectEntityModel } from '@midwayjs/typeorm';
 import { Repository, Like, In } from 'typeorm';
 import { BlindBox } from '../../entity/blindbox/blindbox.entity';
@@ -7,9 +7,10 @@ import { User } from '../../entity/user/user.entity';
 import {
   CreateBlindBoxDTO,
   UpdateBlindBoxDTO,
-  QueryBlindBoxDTO,
   DrawBlindBoxDTO,
+  CreateBoxItemDTO,
 } from '../../dto/blindbox/blindbox.dto';
+import { MidwayHttpError } from '@midwayjs/core';
 
 @Provide()
 export class BlindBoxService {
@@ -36,7 +37,11 @@ export class BlindBoxService {
   async update(updateDto: UpdateBlindBoxDTO): Promise<BlindBox> {
     const { id, ...updateData } = updateDto;
     await this.blindBoxRepo.update(id, updateData);
-    return await this.blindBoxRepo.findOne({ where: { id } });
+    const updated = await this.blindBoxRepo.findOne({ where: { id } });
+    if (!updated) {
+      throw new MidwayHttpError('盲盒不存在', 404);
+    }
+    return updated;
   }
 
   /**
@@ -51,50 +56,35 @@ export class BlindBoxService {
    * 获取盲盒详情
    */
   async findById(id: number): Promise<BlindBox> {
-    return await this.blindBoxRepo.findOne({
+    const box = await this.blindBoxRepo.findOne({
       where: { id },
       relations: ['boxItems'],
     });
+    if (!box) {
+      throw new MidwayHttpError('盲盒不存在', 404);
+    }
+    return box;
   }
 
   /**
    * 分页查询盲盒列表
    */
-  async findList(queryDto: QueryBlindBoxDTO) {
-    const { page = '1', limit = '10', keyword, status, seller_id } = queryDto;
-    const pageNum = parseInt(page) || 1;
-    const limitNum = parseInt(limit) || 10;
-    const skip = (pageNum - 1) * limitNum;
-
-    const whereCondition: any = {};
-    if (keyword) {
-      whereCondition.name = Like(`%${keyword}%`);
-    }
-    if (status !== undefined && status !== null && status !== '') {
-      whereCondition.status = parseInt(status);
-    }
-    if (seller_id !== undefined && seller_id !== null && seller_id !== '') {
-      // 确保seller_id是数字类型
-      whereCondition.seller_id = parseInt(seller_id);
-    }
-
-    console.log('查询条件:', whereCondition); // 添加调试日志
-
+  async findList({ page = 1, limit = 10, keyword, status }: { page?: number; limit?: number; keyword?: string; status?: number }) {
+    const where: Record<string, unknown> = {};
+    if (keyword) where.name = Like(`%${keyword}%`);
+    if (status !== undefined) where.status = Number(status);
     const [list, total] = await this.blindBoxRepo.findAndCount({
-      where: whereCondition,
-      skip,
-      take: limitNum,
-      order: { created_at: 'DESC' },
-      relations: ['seller'],
+      where,
+      order: { id: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
     });
+    return { list, total };
+  }
 
-    return {
-      list,
-      total,
-      page: pageNum,
-      limit: limitNum,
-      totalPages: Math.ceil(total / limitNum),
-    };
+  async findOne(id: number) {
+    const box = await this.blindBoxRepo.findOne({ where: { id } });
+    return box || null;
   }
 
   /**
@@ -108,19 +98,19 @@ export class BlindBoxService {
       where: { id: blind_box_id, status: 1 },
     });
     if (!blindBox) {
-      throw new Error('盲盒不存在或已下架');
+      throw new MidwayHttpError('盲盒不存在或已下架', 404);
     }
 
     // 检查库存
     if (blindBox.stock < quantity) {
-      throw new Error('库存不足');
+      throw new MidwayHttpError('库存不足', 400);
     }
 
     // 检查用户余额
     const user = await this.userRepo.findOne({ where: { id: userId } });
     const totalCost = blindBox.price * quantity;
     if (user.balance < totalCost) {
-      throw new Error('余额不足');
+      throw new MidwayHttpError('余额不足', 400);
     }
 
     // 获取盲盒商品列表
@@ -129,20 +119,20 @@ export class BlindBoxService {
     });
 
     if (boxItems.length === 0) {
-      throw new Error('盲盒商品配置错误');
+      throw new MidwayHttpError('盲盒商品配置错误', 400);
     }
 
     // 验证概率总和是否为1
-    const totalProbability = boxItems.reduce((sum, item) => sum + Number(item.probability), 0);
+    const totalProbability = boxItems.reduce((sum: number, item: { probability: number }) => sum + Number(item.probability), 0);
     if (Math.abs(totalProbability - 1) > 0.001) {
-      throw new Error('商品概率配置错误，总和必须为1');
+      throw new MidwayHttpError('商品概率配置错误，总和必须为1', 400);
     }
 
     const results = [];
 
     // 执行抽奖
     for (let i = 0; i < quantity; i++) {
-      const drawnItem = this.drawRandomItem(boxItems);
+      const drawnItem = this.drawRandomItem(boxItems as BoxItem[]);
       results.push(drawnItem);
     }
 
@@ -184,7 +174,7 @@ export class BlindBoxService {
   /**
    * 批量创建盲盒商品
    */
-  async createBoxItems(boxItems: any[]): Promise<BoxItem[]> {
+  async createBoxItems(boxItems: CreateBoxItemDTO[]): Promise<BoxItem[]> {
     const items = this.boxItemRepo.create(boxItems);
     return await this.boxItemRepo.save(items);
   }
@@ -202,7 +192,7 @@ export class BlindBoxService {
   /**
    * 更新盲盒商品
    */
-  async updateBoxItem(id: number, updateData: Partial<BoxItem>): Promise<BoxItem> {
+  async updateBoxItem(id: number, updateData: Partial<BoxItem>): Promise<BoxItem | null> {
     await this.boxItemRepo.update(id, updateData);
     return await this.boxItemRepo.findOne({ where: { id } });
   }

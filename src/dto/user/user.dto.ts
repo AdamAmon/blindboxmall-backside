@@ -48,4 +48,7 @@ export class UpdateUserDTO {
       .optional()
   )
   phone?: string;
+
+  @Rule(RuleType.number().min(0).optional())
+  balance?: number;
 }

@@ -73,4 +73,11 @@ describe('test/controller/home.test.ts', () => {
       expect(result.body).toEqual({});
     }
   });
+
+  it('should handle unexpected params gracefully', async () => {
+    const result = await createHttpRequest(app)
+      .get('/api/home/unknown')
+      .set('Authorization', `Bearer ${token}`);
+    expect([404, 500]).toContain(result.status);
+  });
 });

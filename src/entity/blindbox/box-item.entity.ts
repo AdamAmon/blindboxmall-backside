@@ -27,8 +27,8 @@ export class BoxItem {
   @Column({ type: 'decimal', precision: 4, scale: 3, comment: '抽中概率' })
   probability: number;
 
-  // 关联关系
-  @ManyToOne(() => BlindBox, blindBox => blindBox.boxItems)
+  // 关联关系 - 使用字符串引用避免循环依赖
+  @ManyToOne('BlindBox', 'boxItems')
   @JoinColumn({ name: 'blind_box_id' })
   blindBox: BlindBox;
 } 

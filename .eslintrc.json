@@ -1,10 +1,15 @@
 {
-  "extends": "./node_modules/mwts/",
-  "ignorePatterns": ["node_modules", "dist", "test", "jest.config.js", "typings"],
   "env": {
-    "jest": true
+    "node": true,
+    "es2021": true
   },
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["@typescript-eslint"],
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended"
+  ],
   "rules": {
-    "node/no-unpublished-require": "off"
+    // 可根据需要自定义规则
   }
 }

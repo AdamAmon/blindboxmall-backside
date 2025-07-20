@@ -32,7 +32,7 @@ export default {
     credentials: true,
   },
   alipay: {
-    appId: '9021000149679684',
+    appId: process.env.ALIPAY_APP_ID || '9021000149679684',
     privateKey:
       process.env.NODE_ENV === 'unittest'
         ? 'test-private-key'
@@ -49,6 +49,8 @@ export default {
     charset: 'utf-8',
     signType: 'RSA2',
     keyType: 'PKCS8',
+    // 新增：所有支付相关接口userId默认取当前登录用户
+    defaultUserIdFromToken: true,
   },
   // staticFile: {
   //   dirs: {
