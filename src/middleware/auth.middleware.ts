@@ -37,11 +37,11 @@ export class AuthMiddleware {
 
       try {
         const config = ctx.app.getConfig();
-        const decoded = jwt.verify(token, config.jwt.secret) as any;
+        const decoded = jwt.verify(token, config.jwt.secret) as Record<string, unknown>;
         // 将JWT中的userId映射为id，保持向后兼容
         ctx.user = {
-          id: decoded.userId,
-          role: decoded.role,
+          id: (decoded as { userId?: number }).userId,
+          role: (decoded as { role?: string }).role,
           ...decoded
         };
       } catch (err) {

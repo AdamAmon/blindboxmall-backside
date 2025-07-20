@@ -16,8 +16,8 @@ export class AuthController {
   async register(@Body() registerDto: RegisterDTO) {
     const user = await this.userService.createUser(registerDto);
     return {
-      code: 200,
-      result: {
+      success: true,
+      data: {
         id: user.id,
         username: user.username,
         nickname: user.nickname,
@@ -36,8 +36,8 @@ export class AuthController {
     const token = await this.authService.generateToken(user);
 
     return {
-      code: 200,
-      result: {
+      success: true,
+      data: {
         token,
         user: {
           id: user.id,

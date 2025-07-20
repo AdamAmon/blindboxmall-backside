@@ -1,4 +1,3 @@
-//:src/entity/user.entity.ts
 import {
   Entity,
   Column,
@@ -9,7 +8,7 @@ import {
 } from 'typeorm';
 import { BlindBox } from '../blindbox/blindbox.entity';
 
-@Entity()
+@Entity('users')
 export class User {
   @PrimaryGeneratedColumn()
   id: number;
@@ -47,7 +46,7 @@ export class User {
   @UpdateDateColumn()
   updated_at: Date;
 
-  // 关联关系
-  @OneToMany(() => BlindBox, blindBox => blindBox.seller)
+  // 关联关系 - 使用字符串引用避免循环依赖
+  @OneToMany('BlindBox', 'seller')
   blindBoxes: BlindBox[];
 }

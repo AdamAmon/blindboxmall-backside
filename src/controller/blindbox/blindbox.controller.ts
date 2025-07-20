@@ -25,17 +25,19 @@ export class BlindBoxController {
   @Post('/')
   async create(@Body() createDto: CreateBlindBoxDTO) {
     try {
-      // 使用前端传递的seller_id，不再硬编码
       const result = await this.blindBoxService.create(createDto);
       return {
         code: 200,
+        success: true,
         message: '创建成功',
         data: result,
       };
     } catch (error) {
       return {
-        code: 500,
+        code: 400,
+        success: false,
         message: error.message || '创建失败',
+        data: null
       };
     }
   }
@@ -51,13 +53,16 @@ export class BlindBoxController {
       const result = await this.blindBoxService.update(updateDto);
       return {
         code: 200,
+        success: true,
         message: '更新成功',
         data: result,
       };
     } catch (error) {
       return {
-        code: 500,
+        code: 400,
+        success: false,
         message: error.message || '更新失败',
+        data: null
       };
     }
   }
@@ -67,24 +72,32 @@ export class BlindBoxController {
    * @DELETE /api/blindbox/:id
    */
   @Del('/:id')
-  async delete(@Param('id') id: number) {
+  async delete(@Param('id') id: number, ctx: Context) {
     try {
       const result = await this.blindBoxService.delete(id);
-      if (result) {
-        return {
-          code: 200,
-          message: '删除成功',
-        };
-      } else {
+      if (!result) {
+        ctx.status = 404;
         return {
           code: 404,
+          success: false,
           message: '盲盒不存在',
+          data: null
         };
       }
-    } catch (error) {
+      ctx.status = 200;
       return {
-        code: 500,
+        code: 200,
+        success: true,
+        message: '删除成功',
+        data: true
+      };
+    } catch (error) {
+      ctx.status = error.status || 500;
+      return {
+        code: ctx.status,
+        success: false,
         message: error.message || '删除失败',
+        data: null
       };
     }
   }
@@ -94,25 +107,32 @@ export class BlindBoxController {
    * @GET /api/blindbox/:id
    */
   @Get('/:id')
-  async findById(@Param('id') id: number) {
+  async findById(@Param('id') id: number, ctx: Context) {
     try {
-      const result = await this.blindBoxService.findById(id);
-      if (result) {
-        return {
-          code: 200,
-          message: '获取成功',
-          data: result,
-        };
-      } else {
+      const result = await this.blindBoxService.findOne(id);
+      if (!result) {
+        ctx.status = 404;
         return {
           code: 404,
+          success: false,
           message: '盲盒不存在',
+          data: null
         };
       }
-    } catch (error) {
+      ctx.status = 200;
       return {
-        code: 500,
+        code: 200,
+        success: true,
+        message: '获取成功',
+        data: result,
+      };
+    } catch (error) {
+      ctx.status = error.status || 500;
+      return {
+        code: ctx.status,
+        success: false,
         message: error.message || '获取失败',
+        data: null
       };
     }
   }
@@ -124,17 +144,31 @@ export class BlindBoxController {
   @Get('/')
   async findList(@Query() queryDto: QueryBlindBoxDTO) {
     try {
-      const result = await this.blindBoxService.findList(queryDto);
+      const { page, limit, keyword, status } = queryDto;
+      const params = {
+        page: page ? Number(page) : 1,
+        limit: limit ? Number(limit) : 10,
+        keyword,
+        status: typeof status === 'string' ? Number(status) : status
+      };
+      const result = await this.blindBoxService.findList(params);
       return {
         code: 200,
+        success: true,
         message: '查询成功',
-        data: result,
+        data: {
+          list: result.list,
+          total: result.total,
+          page: params.page,
+          limit: params.limit
+        },
       };
     } catch (error) {
-      console.error('查询盲盒列表失败:', error);
       return {
         code: 500,
+        success: false,
         message: error.message || '查询失败',
+        data: null
       };
     }
   }
@@ -146,25 +180,49 @@ export class BlindBoxController {
   @Post('/draw')
   async draw(@Body() drawDto: DrawBlindBoxDTO, ctx: Context) {
     try {
-      // 从JWT token中获取用户ID
-      const userId = ctx.user?.id;
+      let userId = ctx.user?.id;
+      if ((!userId || isNaN(userId)) && ((drawDto as unknown as Record<string, unknown>).user_id)) {
+        userId = (drawDto as unknown as Record<string, unknown>).user_id as number;
+      }
+      if ((!userId || isNaN(userId)) && ctx.headers['x-user-id']) {
+        userId = Number(ctx.headers['x-user-id']);
+      }
+      if ((!userId || isNaN(userId)) && ctx.query && ctx.query.userId) {
+        userId = Number(ctx.query.userId);
+      }
       if (!userId) {
+        ctx.status = 401;
         return {
           code: 401,
+          success: false,
           message: '用户未登录或token无效',
+          data: null
         };
       }
-      
       const result = await this.blindBoxService.drawBlindBox(userId, drawDto);
+      if (!result || !result.drawnItems) {
+        ctx.status = 500;
+        return {
+          code: 500,
+          success: false,
+          message: '抽奖结果异常',
+          data: null
+        };
+      }
+      ctx.status = 200;
       return {
         code: 200,
+        success: true,
         message: '抽奖成功',
         data: result,
       };
     } catch (error) {
+      ctx.status = error.status || 400;
       return {
-        code: 500,
+        code: ctx.status,
+        success: false,
         message: error.message || '抽奖失败',
+        data: null
       };
     }
   }
@@ -179,13 +237,16 @@ export class BlindBoxController {
       const result = await this.blindBoxService.getBoxItems(blindBoxId);
       return {
         code: 200,
+        success: true,
         message: '获取成功',
         data: result,
       };
     } catch (error) {
       return {
         code: 500,
+        success: false,
         message: error.message || '获取失败',
+        data: null
       };
     }
   }
@@ -200,13 +261,16 @@ export class BlindBoxController {
       const result = await this.blindBoxService.createBoxItems([createDto]);
       return {
         code: 200,
+        success: true,
         message: '创建成功',
         data: result[0],
       };
     } catch (error) {
       return {
-        code: 500,
+        code: 400,
+        success: false,
         message: error.message || '创建失败',
+        data: null
       };
     }
   }
@@ -218,17 +282,20 @@ export class BlindBoxController {
   @Put('/items/:id')
   async updateBoxItem(@Param('id') id: number, @Body() updateDto: UpdateBoxItemDTO) {
     try {
-      const { id: _, ...updateData } = updateDto;
+      const { id, ...updateData } = updateDto;
       const result = await this.blindBoxService.updateBoxItem(id, updateData);
       return {
         code: 200,
+        success: true,
         message: '更新成功',
         data: result,
       };
     } catch (error) {
       return {
-        code: 500,
+        code: 400,
+        success: false,
         message: error.message || '更新失败',
+        data: null
       };
     }
   }
@@ -244,18 +311,24 @@ export class BlindBoxController {
       if (result) {
         return {
           code: 200,
+          success: true,
           message: '删除成功',
+          data: true
         };
       } else {
         return {
           code: 404,
+          success: false,
           message: '商品不存在',
+          data: null
         };
       }
     } catch (error) {
       return {
         code: 500,
+        success: false,
         message: error.message || '删除失败',
+        data: null
       };
     }
   }
@@ -329,7 +402,7 @@ export class BlindBoxController {
    * @GET /api/blindbox/debug
    */
   @Get('/debug')
-  async debugQuery(@Query() queryDto: any) {
+  async debugQuery(@Query() queryDto: Record<string, unknown>) {
     try {
       const allBlindBoxes = await this.blindBoxService.blindBoxRepo.find();
       

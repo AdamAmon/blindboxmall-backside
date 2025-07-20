@@ -46,11 +46,11 @@ export class BlindBox {
   @UpdateDateColumn()
   updated_at: Date;
 
-  // 关联关系
-  @OneToMany(() => BoxItem, boxItem => boxItem.blindBox)
+  // 关联关系 - 使用字符串引用避免循环依赖
+  @OneToMany('BoxItem', 'blindBox')
   boxItems: BoxItem[];
 
-  @ManyToOne(() => User, user => user.blindBoxes)
+  @ManyToOne('User', 'blindBoxes')
   @JoinColumn({ name: 'seller_id' })
   seller: User;
 } 

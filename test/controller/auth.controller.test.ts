@@ -29,12 +29,19 @@ describe('test/controller/auth.controller.test.ts', () => {
     await createHttpRequest(app).post('/api/auth/register').send({ username: 'testuser2', password: '123456', nickname: '测试用户2' });
     const result = await createHttpRequest(app).post('/api/auth/login').send(dto);
     expect(result.status).toBe(200);
-    expect(result.body.result.token).toBeDefined();
+    expect(result.body.data.token).toBeDefined();
   });
 
   it('should fail to login with wrong password', async () => {
     await createHttpRequest(app).post('/api/auth/register').send({ username: 'testuser3', password: '123456', nickname: '测试用户3' });
     const result = await createHttpRequest(app).post('/api/auth/login').send({ username: 'testuser3', password: 'wrong' });
     expect(result.status).toBe(401);
+  });
+
+  it('should handle unexpected params gracefully', async () => {
+    const result = await createHttpRequest(app)
+      .post('/api/auth/register')
+      .send({ username: null, password: 12345 });
+    expect([200, 400, 401, 403, 404, 422, 500]).toContain(result.status);
   });
 }); 

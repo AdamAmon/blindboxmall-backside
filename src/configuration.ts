@@ -5,17 +5,20 @@ import * as info from '@midwayjs/info';
 import { join } from 'path';
 import { ReportMiddleware } from './middleware/report.middleware';
 import * as crossDomain from '@midwayjs/cross-domain'; // 跨域模块
-import * as busboy from '@midwayjs/busboy';
 import * as jwt from '@midwayjs/jwt';
 import { AuthMiddleware } from './middleware/auth.middleware';
 import * as typeorm from '@midwayjs/typeorm';
 import { DefaultErrorFilter } from './filter/default.filter';
+import * as swagger from '@midwayjs/swagger';
+import * as busboy from '@midwayjs/busboy';
+
 
 @Configuration({
   imports: [
     koa,
     typeorm,
     validate,
+    swagger,
     crossDomain,
     busboy,
     jwt,

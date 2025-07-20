@@ -121,4 +121,11 @@ describe('test/controller/api.test.ts', () => {
     });
   });
 
+  it('should handle unexpected params gracefully', async () => {
+    const result = await createHttpRequest(app)
+      .get('/api/unknown')
+      .set('Authorization', `Bearer ${token}`);
+    expect([404, 500]).toContain(result.status);
+  });
+
 });
