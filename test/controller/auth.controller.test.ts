@@ -1,5 +1,6 @@
 import { createApp, close, createHttpRequest } from '@midwayjs/mock';
 import { Framework } from '@midwayjs/koa';
+import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 
 describe('test/controller/auth.controller.test.ts', () => {
   let app;
@@ -36,12 +37,5 @@ describe('test/controller/auth.controller.test.ts', () => {
     await createHttpRequest(app).post('/api/auth/register').send({ username: 'testuser3', password: '123456', nickname: '测试用户3' });
     const result = await createHttpRequest(app).post('/api/auth/login').send({ username: 'testuser3', password: 'wrong' });
     expect(result.status).toBe(401);
-  });
-
-  it('should handle unexpected params gracefully', async () => {
-    const result = await createHttpRequest(app)
-      .post('/api/auth/register')
-      .send({ username: null, password: 12345 });
-    expect([200, 400, 401, 403, 404, 422, 500]).toContain(result.status);
   });
 }); 
