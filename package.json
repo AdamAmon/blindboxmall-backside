@@ -50,7 +50,7 @@
     "test:clean": "cross-env NODE_ENV=unittest jest --coverage --clean",
     "cov": "jest --coverage",
     "lint": "mwts check",
-    "lint:fix": "mwts fix",
+    "lint:fix": "mwts check --fix",
     "ci": "npm run cov",
     "bundle": "bundle && npm run build && ncc build bootstrap.js -o build",
     "start": "node ./build/index.js",

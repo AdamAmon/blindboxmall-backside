@@ -5,7 +5,9 @@ import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToMany,
 } from 'typeorm';
+import { BlindBox } from '../blindbox/blindbox.entity';
 
 @Entity()
 export class User {
@@ -44,4 +46,8 @@ export class User {
 
   @UpdateDateColumn()
   updated_at: Date;
+
+  // 关联关系
+  @OneToMany(() => BlindBox, blindBox => blindBox.seller)
+  blindBoxes: BlindBox[];
 }
