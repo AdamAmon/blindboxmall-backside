@@ -4,6 +4,8 @@ import { UserAddress } from '../entity/address/user_address.entity';
 import { Recharge } from '../entity/pay/recharge.entity';
 import { BlindBox } from '../entity/blindbox/blindbox.entity';
 import { BoxItem } from '../entity/blindbox/box-item.entity';
+import { Order } from '../entity/pay/order.entity';
+import { OrderItem } from '../entity/pay/order-item.entity';
 
 export default {
   koa: {
@@ -16,7 +18,7 @@ export default {
         database: ':memory:', // 使用内存数据库
         synchronize: true,
         logging: false,
-        entities: [User, UserAddress, Recharge, BlindBox, BoxItem],
+        entities: [User, UserAddress, Recharge, BlindBox, BoxItem, Order, OrderItem],
       },
     },
   },

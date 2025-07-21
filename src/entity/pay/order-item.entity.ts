@@ -29,8 +29,8 @@ export class OrderItem {
   @JoinColumn({ name: 'blind_box_id' })
   blindBox: BlindBox;
 
-  @Column()
-  item_id: number;
+  @Column({ nullable: true })
+  item_id?: number;
 
   @ManyToOne(() => BoxItem)
   @JoinColumn({ name: 'item_id' })

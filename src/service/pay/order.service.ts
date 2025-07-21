@@ -40,15 +40,17 @@ export class OrderService {
       })
     );
     await this.orderItemRepo.save(items);
-    // 启动超时未支付自动取消（600s）
-    setTimeout(async () => {
-      const latest = await this.orderRepo.findOne({ where: { id: savedOrder.id } });
-      if (latest && latest.status === 'pending' && !latest.cancelled) {
-        latest.status = 'cancelled';
-        latest.cancelled = true;
-        await this.orderRepo.save(latest);
-      }
-    }, 600000);
+    // 启动超时未支付自动取消（仅非测试环境下注册定时器）
+    if (process.env.NODE_ENV !== 'unittest') {
+      setTimeout(async () => {
+        const latest = await this.orderRepo.findOne({ where: { id: savedOrder.id } });
+        if (latest && latest.status === 'pending' && !latest.cancelled) {
+          latest.status = 'cancelled';
+          latest.cancelled = true;
+          await this.orderRepo.save(latest);
+        }
+      }, 600000); // 600秒
+    }
     return { order: savedOrder, items };
   }
 
@@ -74,22 +76,24 @@ export class OrderService {
   async payOrder(orderId: number) {
     const order = await this.orderRepo.findOne({ where: { id: orderId } });
     if (!order) throw new MidwayHttpError('订单不存在', 404);
+    if (order.cancelled) throw new MidwayHttpError('已取消', 400);
     if (order.status !== 'pending') throw new MidwayHttpError('订单状态异常', 400);
-    if (order.cancelled) throw new MidwayHttpError('订单已取消', 400);
     // 余额支付
     if (order.pay_method === 'balance') {
       // 这里应调用UserService扣除余额，略
       order.status = 'delivering';
       order.pay_time = new Date();
       await this.orderRepo.save(order);
-      // 30秒后自动变为delivered
-      setTimeout(async () => {
-        const latest = await this.orderRepo.findOne({ where: { id: orderId } });
-        if (latest && latest.status === 'delivering') {
-          latest.status = 'delivered';
-          await this.orderRepo.save(latest);
-        }
-      }, 30000);
+      // 支付后自动送达（仅非测试环境下注册定时器）
+      if (process.env.NODE_ENV !== 'unittest') {
+        setTimeout(async () => {
+          const latest = await this.orderRepo.findOne({ where: { id: orderId } });
+          if (latest && latest.status === 'delivering') {
+            latest.status = 'delivered';
+            await this.orderRepo.save(latest);
+          }
+        }, 30000); // 30秒
+      }
       return { success: true, pay_method: 'balance' };
     }
     // 支付宝支付
