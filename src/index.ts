@@ -9,4 +9,3 @@ export * from './service/user/user.service';
 export * from './controller/api/api.controller';
 export * from './controller/home/home.controller';
 export * from './filter/default.filter';
-export * from './filter/notfound.filter';

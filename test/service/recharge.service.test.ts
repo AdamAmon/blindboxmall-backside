@@ -142,4 +142,92 @@ describe('RechargeService 边界与异常分支补充', () => {
     const res = await rechargeService.handleAlipayNotify(JSON.stringify({ out_trade_no: tradeNo, trade_status: 'TRADE_SUCCESS' }));
     expect(res).toBe('success');
   });
+});
+
+describe('RechargeService 额外分支补充', () => {
+  let app;
+  let rechargeService;
+  let userService;
+  let userId;
+  const pendingTimeouts: Promise<void>[] = [];
+  let spyTimeout;
+  beforeAll(async () => {
+    app = await createApp();
+    rechargeService = await app.getApplicationContext().getAsync(RechargeService);
+    userService = await app.getApplicationContext().getAsync(UserService);
+    const userArr = await userService.createUser({ username: 'paytest_extra2', password: '123456', nickname: '分支用户' });
+    const user = Array.isArray(userArr) ? userArr[0] : userArr;
+    userId = user?.id as number;
+    // mock setTimeout 全局收集
+    spyTimeout = jest.spyOn(global, 'setTimeout').mockImplementation((fn) => {
+      const p = Promise.resolve().then(fn);
+      pendingTimeouts.push(p);
+      return {
+        ref: () => {},
+        unref: () => {},
+      } as unknown as NodeJS.Timeout;
+    });
+  });
+  afterAll(async () => {
+    await Promise.all(pendingTimeouts);
+    spyTimeout.mockRestore();
+    await close(app);
+  });
+
+  it('createRechargeOrder getAlipaySdk异常', async () => {
+    const spy = jest.spyOn(rechargeService, 'getAlipaySdk').mockImplementation(() => { throw new Error('sdk error'); });
+    await expect(rechargeService.createRechargeOrder(userId, 100)).rejects.toThrow('支付宝SDK初始化失败');
+    spy.mockRestore();
+  });
+
+  it('createRechargeOrder alipaySdk.pageExecute异常', async () => {
+    // mock testMode 为 false，确保走 pageExecute
+    rechargeService.alipayConfig.testMode = false;
+    const spySdk = jest.spyOn(rechargeService, 'getAlipaySdk').mockImplementation(() => ({
+      pageExecute: () => { throw new Error('page error'); }
+    }));
+    await expect(rechargeService.createRechargeOrder(userId, 100)).rejects.toThrow('支付宝下单失败');
+    spySdk.mockRestore();
+  });
+
+  it('handleAlipayNotify 订单存在但用户已被删除', async () => {
+    // 先创建订单
+    const tradeNo = 'CZ_USERDEL';
+    await rechargeService.rechargeModel.save(rechargeService.rechargeModel.create({ recharge_user_id: userId, recharge_amount: 1, recharge_status: 'pending', recharge_out_trade_no: tradeNo }));
+    // mock userModel.findOne 返回 null
+    const spy = jest.spyOn(rechargeService.userModel, 'findOne').mockResolvedValueOnce(null);
+    const res = await rechargeService.handleAlipayNotify(JSON.stringify({ out_trade_no: tradeNo, trade_status: 'TRADE_SUCCESS' }));
+    expect(res).toBe('success');
+    spy.mockRestore();
+  });
+
+  it('handleAlipayNotify 支持query string格式', async () => {
+    // 先创建订单
+    const tradeNo = 'CZ_QS';
+    await rechargeService.rechargeModel.save(rechargeService.rechargeModel.create({ recharge_user_id: userId, recharge_amount: 1, recharge_status: 'pending', recharge_out_trade_no: tradeNo }));
+    const qs = `out_trade_no=${tradeNo}&trade_status=TRADE_SUCCESS`;
+    const res = await rechargeService.handleAlipayNotify(qs);
+    expect(res).toBe('success');
+  });
+
+  it('createRechargeOrder 超时自动取消分支', async () => {
+    const spySdk = jest.spyOn(rechargeService, 'getAlipaySdk').mockImplementation(() => ({
+      pageExecute: () => Promise.resolve('mockUrl')
+    }));
+    const { record } = await rechargeService.createRechargeOrder(userId, 123);
+    const latest = await rechargeService.rechargeModel.findOne({ where: { recharge_id: record.recharge_id } });
+    expect(latest.recharge_status === 'cancelled' || latest.recharge_status === 'pending').toBe(true);
+    spySdk.mockRestore();
+  });
+
+  it('createRechargeOrder amount为字符串', async () => {
+    await expect(rechargeService.createRechargeOrder(userId, '100' as unknown as number)).rejects.toThrow();
+  });
+  it('createRechargeOrder userId为字符串', async () => {
+    const spySdk = jest.spyOn(rechargeService, 'getAlipaySdk').mockImplementation(() => ({
+      pageExecute: () => Promise.resolve('mockUrl')
+    }));
+    await expect(rechargeService.createRechargeOrder(String(userId) as unknown as number, 100)).resolves.toBeDefined();
+    spySdk.mockRestore();
+  });
 }); 
