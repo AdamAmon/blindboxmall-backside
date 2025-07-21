@@ -1,13 +1,13 @@
 import { Provide, Config } from '@midwayjs/core';
 import { InjectEntityModel } from '@midwayjs/typeorm';
 import { Repository } from 'typeorm';
-import { Recharge } from '../../entity/pay/pay.entity';
+import { Recharge } from '../../entity/pay/recharge.entity';
 import { User } from '../../entity/user/user.entity';
 import { MidwayHttpError } from '@midwayjs/core';
 import { AlipaySdk } from 'alipay-sdk';
 
 @Provide()
-export class PayService {
+export class RechargeService {
   @Config('alipay')
   alipayConfig;
 

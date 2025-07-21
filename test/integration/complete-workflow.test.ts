@@ -154,7 +154,7 @@ describe('完整业务流程集成测试', () => {
     });
   });
 
-  describe('支付流程', () => {
+  describe('充值流程', () => {
     it('应该完成充值订单的创建和查询', async () => {
       // 1. 创建充值订单
       const rechargeData = {

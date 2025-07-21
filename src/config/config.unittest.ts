@@ -1,7 +1,7 @@
 import { MidwayConfig } from '@midwayjs/core';
 import { User } from '../entity/user/user.entity';
 import { UserAddress } from '../entity/address/user_address.entity';
-import { Recharge } from '../entity/pay/pay.entity';
+import { Recharge } from '../entity/pay/recharge.entity';
 import { BlindBox } from '../entity/blindbox/blindbox.entity';
 import { BoxItem } from '../entity/blindbox/box-item.entity';
 
