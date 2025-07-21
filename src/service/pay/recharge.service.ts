@@ -85,6 +85,14 @@ export class RechargeService {
         recharge_out_trade_no: outTradeNo,
       });
       await this.rechargeModel.save(record);
+      // 启动超时未支付自动取消（600s）
+      setTimeout(async () => {
+        const latest = await this.rechargeModel.findOne({ where: { recharge_id: record.recharge_id } });
+        if (latest && latest.recharge_status === 'pending') {
+          latest.recharge_status = 'cancelled';
+          await this.rechargeModel.save(latest);
+        }
+      }, 600000);
       // console.log('[调试] createRechargeOrder 订单记录:', record);
       // 生成支付宝支付链接
       let alipaySdk;
