@@ -1,11 +1,11 @@
 import { Controller, Post, Body, Get, Query, Inject } from '@midwayjs/core';
-import { PayService } from '../../service/pay/pay.service';
+import { RechargeService } from '../../service/pay/recharge.service';
 import { MidwayHttpError } from '@midwayjs/core';
 
 @Controller('/api/pay')
-export class PayController {
+export class RechargeController {
   @Inject()
-  payService: PayService;
+  payService: RechargeService;
 
   // 充值下单
   @Post('/recharge')

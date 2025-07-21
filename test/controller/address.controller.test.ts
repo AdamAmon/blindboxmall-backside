@@ -1,5 +1,4 @@
 import { createApp, close, createHttpRequest } from '@midwayjs/mock';
-
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import { AddressService } from '../../src/service/address/address.service';
 let app;

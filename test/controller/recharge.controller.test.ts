@@ -1,6 +1,6 @@
 import { createApp, close, createHttpRequest } from '@midwayjs/mock';
 import { Framework } from '@midwayjs/koa';
-import { PayService } from '../../src/service/pay/pay.service';
+import { RechargeService } from '../../src/service/pay/recharge.service';
 
 describe('test/controller/pay.controller.test.ts', () => {
   let app;
@@ -62,8 +62,8 @@ describe('test/controller/pay.controller.test.ts', () => {
   });
 
   it('should handle recharge service error', async () => {
-    const payService = await app.getApplicationContext().getAsync(PayService);
-    const spy = jest.spyOn(payService, 'createRechargeOrder').mockImplementation(() => { throw new Error('service error'); });
+    const rechargeService = await app.getApplicationContext().getAsync(RechargeService);
+    const spy = jest.spyOn(rechargeService, 'createRechargeOrder').mockImplementation(() => { throw new Error('service error'); });
     const result = await createHttpRequest(app)
       .post('/api/pay/recharge')
       .set('Authorization', `Bearer ${token}`)
@@ -88,8 +88,8 @@ describe('test/controller/pay.controller.test.ts', () => {
   });
 
   it('should handle records service error', async () => {
-    const payService = await app.getApplicationContext().getAsync(PayService);
-    const spy = jest.spyOn(payService, 'getRechargeRecords').mockImplementation(() => { throw new Error('service error'); });
+    const rechargeService = await app.getApplicationContext().getAsync(RechargeService);
+    const spy = jest.spyOn(rechargeService, 'getRechargeRecords').mockImplementation(() => { throw new Error('service error'); });
     const result = await createHttpRequest(app)
       .get(`/api/pay/records?userId=${userId as number}`)
       .set('Authorization', `Bearer ${token}`);
@@ -111,8 +111,8 @@ describe('test/controller/pay.controller.test.ts', () => {
   });
 
   it('should handle notify service error', async () => {
-    const payService = await app.getApplicationContext().getAsync(PayService);
-    const spy = jest.spyOn(payService, 'handleAlipayNotify').mockImplementation(() => { throw new Error('service error'); });
+    const rechargeService = await app.getApplicationContext().getAsync(RechargeService);
+    const spy = jest.spyOn(rechargeService, 'handleAlipayNotify').mockImplementation(() => { throw new Error('service error'); });
     const result = await createHttpRequest(app)
       .post('/api/pay/notify')
       .set('Authorization', `Bearer ${token}`)
