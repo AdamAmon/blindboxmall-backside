@@ -172,6 +172,20 @@ export class BlindBoxService {
   }
 
   /**
+   * 按盲盒ID抽取单个商品（供订单抽奖调用）
+   */
+  async drawRandomItemByBoxId(blindBoxId: number): Promise<BoxItem> {
+    const boxItems = await this.boxItemRepo.find({ where: { blind_box_id: blindBoxId } });
+    if (!boxItems.length) throw new MidwayHttpError('盲盒商品配置错误', 400);
+    // 验证概率总和是否为1
+    const totalProbability = boxItems.reduce((sum, item) => sum + Number(item.probability), 0);
+    if (Math.abs(totalProbability - 1) > 0.001) {
+      throw new MidwayHttpError('商品概率配置错误，总和必须为1', 400);
+    }
+    return this.drawRandomItem(boxItems);
+  }
+
+  /**
    * 批量创建盲盒商品
    */
   async createBoxItems(boxItems: CreateBoxItemDTO[]): Promise<BoxItem[]> {
