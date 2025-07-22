@@ -6,6 +6,8 @@ import { OrderItem } from '../../entity/pay/order-item.entity';
 import { CreateOrderDTO, CreateOrderItemDTO } from '../../dto/pay/order.dto';
 import { MidwayHttpError } from '@midwayjs/core';
 import { BlindBoxService } from '../blindbox/blindbox.service';
+import { User } from '../../entity/user/user.entity';
+import { BlindBox } from '../../entity/blindbox/blindbox.entity';
 
 @Provide()
 export class OrderService {
@@ -14,6 +16,12 @@ export class OrderService {
 
   @InjectEntityModel(OrderItem)
   orderItemRepo: Repository<OrderItem>;
+
+  @InjectEntityModel(User)
+  userRepo: Repository<User>;
+
+  @InjectEntityModel(BlindBox)
+  blindBoxRepo: Repository<BlindBox>;
 
   // 创建订单及订单项（支持批量）
   async createOrder(dto: CreateOrderDTO) {
@@ -63,6 +71,11 @@ export class OrderService {
       relations: ['orderItems', 'user', 'address'],
     });
     if (!order) throw new MidwayHttpError('订单不存在', 404);
+    // 补全每个订单项的盲盒详情
+    for (const item of order.orderItems) {
+      const blindBox = await this.blindBoxRepo.findOne({ where: { id: item.blind_box_id } });
+      item.blindBox = blindBox;
+    }
     return order;
   }
 
@@ -82,10 +95,24 @@ export class OrderService {
     if (order.status !== 'pending') throw new MidwayHttpError('订单状态异常', 400);
     // 余额支付
     if (order.pay_method === 'balance') {
-      // 这里应调用UserService扣除余额，略
+      // 查询用户并扣除余额
+      const user = await this.userRepo.findOne({ where: { id: order.user_id } });
+      if (!user) throw new MidwayHttpError('用户不存在', 404);
+      if (Number(user.balance) < Number(order.total_amount)) throw new MidwayHttpError('余额不足', 400);
+      user.balance = Number(user.balance) - Number(order.total_amount);
+      await this.userRepo.save(user);
       order.status = 'delivering';
       order.pay_time = new Date();
       await this.orderRepo.save(order);
+      // 扣减库存
+      const items = await this.orderItemRepo.find({ where: { order_id: orderId } });
+      for (const item of items) {
+        const blindBox = await this.blindBoxRepo.findOne({ where: { id: item.blind_box_id } });
+        if (blindBox) {
+          blindBox.stock = Math.max(0, blindBox.stock - 1);
+          await this.blindBoxRepo.save(blindBox);
+        }
+      }
       // 支付后自动送达（仅非测试环境下注册定时器）
       if (process.env.NODE_ENV !== 'unittest' && process.env.NODE_ENV !== 'test') {
         setTimeout(async () => {
@@ -100,11 +127,73 @@ export class OrderService {
     }
     // 支付宝支付
     if (order.pay_method === 'alipay') {
-      // 这里应调用支付宝SDK生成支付链接，略
-      // 真实支付回调后再流转状态
-      return { success: true, pay_method: 'alipay', payUrl: 'MOCK_ALIPAY_URL' };
+      // 模拟生成支付链接，订单状态保持pending，需回调确认支付
+      const payUrl = `https://mock.alipay.com/pay?orderId=${orderId}`;
+      // 实际项目应生成真实支付链接并等待回调
+      return { success: true, pay_method: 'alipay', payUrl };
     }
     throw new MidwayHttpError('不支持的支付方式', 400);
+  }
+
+  // 新增：支付宝支付回调模拟接口
+  async alipayCallback(orderId: number) {
+    const order = await this.orderRepo.findOne({ where: { id: orderId } });
+    if (!order) throw new MidwayHttpError('订单不存在', 404);
+    if (order.status !== 'pending') throw new MidwayHttpError('订单状态异常', 400);
+    order.status = 'delivering';
+    order.pay_time = new Date();
+    await this.orderRepo.save(order);
+    // 扣减库存
+    const items = await this.orderItemRepo.find({ where: { order_id: orderId } });
+    for (const item of items) {
+      const blindBox = await this.blindBoxRepo.findOne({ where: { id: item.blind_box_id } });
+      if (blindBox) {
+        blindBox.stock = Math.max(0, blindBox.stock - 1);
+        await this.blindBoxRepo.save(blindBox);
+      }
+    }
+    // 支付后自动送达（仅非测试环境下注册定时器）
+    if (process.env.NODE_ENV !== 'unittest' && process.env.NODE_ENV !== 'test') {
+      setTimeout(async () => {
+        const latest = await this.orderRepo.findOne({ where: { id: orderId } });
+        if (latest && latest.status === 'delivering') {
+          latest.status = 'delivered';
+          await this.orderRepo.save(latest);
+        }
+      }, 30000); // 30秒
+    }
+    return { success: true, pay_method: 'alipay' };
+  }
+
+  // 新增：订单支付宝支付回调模拟接口
+  async alipayOrderNotify(orderId: number, trade_no: string) {
+    const order = await this.orderRepo.findOne({ where: { id: orderId } });
+    if (!order) throw new MidwayHttpError('订单不存在', 404);
+    if (order.status !== 'pending') return 'success'; // 已处理
+    order.status = 'delivering';
+    order.pay_time = new Date();
+    order.alipay_trade_no = trade_no;
+    await this.orderRepo.save(order);
+    // 扣减库存
+    const items = await this.orderItemRepo.find({ where: { order_id: orderId } });
+    for (const item of items) {
+      const blindBox = await this.blindBoxRepo.findOne({ where: { id: item.blind_box_id } });
+      if (blindBox) {
+        blindBox.stock = Math.max(0, blindBox.stock - 1);
+        await this.blindBoxRepo.save(blindBox);
+      }
+    }
+    // 支付后自动送达（仅非测试环境下注册定时器）
+    if (process.env.NODE_ENV !== 'unittest' && process.env.NODE_ENV !== 'test') {
+      setTimeout(async () => {
+        const latest = await this.orderRepo.findOne({ where: { id: orderId } });
+        if (latest && latest.status === 'delivering') {
+          latest.status = 'delivered';
+          await this.orderRepo.save(latest);
+        }
+      }, 30000); // 30秒
+    }
+    return 'success';
   }
 
   // 新增：确认收货并抽奖

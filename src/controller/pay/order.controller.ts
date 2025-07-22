@@ -48,7 +48,12 @@ export class OrderController {
   // 订单支付
   @Post('/pay')
   async payOrder(@Body('order_id') orderId: number) {
-    return await this.orderService.payOrder(orderId);
+    try {
+      const result = await this.orderService.payOrder(orderId);
+      return { success: true, ...result };
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
   }
 
   // 确认收货
@@ -72,5 +77,11 @@ export class OrderController {
     } catch (error) {
       return { success: false, message: error.message };
     }
+  }
+
+  // 支付宝支付回调
+  @Post('/alipayNotify')
+  async alipayNotify(@Body('order_id') orderId: number, @Body('trade_no') tradeNo: string) {
+    return await this.orderService.alipayOrderNotify(orderId, tradeNo);
   }
 } 

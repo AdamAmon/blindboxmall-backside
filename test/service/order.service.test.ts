@@ -46,6 +46,8 @@ describe('test/service/order.service.test.ts', () => {
   });
 
   it('should create order and pay, then auto deliver and complete', async () => {
+    // 保证有余额
+    await userService.userModel.update(userId, { balance: 100 });
     const dto = {
       user_id: userId,
       address_id: addressId,
@@ -95,6 +97,8 @@ describe('test/service/order.service.test.ts', () => {
   });
 
   it('should open blindbox after order completed', async () => {
+    // 保证有余额
+    await userService.userModel.update(userId, { balance: 100 });
     const dto = {
       user_id: userId,
       address_id: addressId,
@@ -282,6 +286,8 @@ describe('OrderService 边界与异常分支补充', () => {
   });
 
   it('payOrder save 抛错', async () => {
+    // 保证有余额
+    await userService.userModel.update(userId, { balance: 100 });
     const dto = { user_id: userId, address_id: addressId, total_amount: 20, pay_method: 'balance', items: [{ blind_box_id: blindBoxId, price: 20 }] };
     const { order } = await orderService.createOrder(dto);
     const spy = jest.spyOn(orderService.orderRepo, 'save').mockImplementation(() => { throw new Error('save error'); });
