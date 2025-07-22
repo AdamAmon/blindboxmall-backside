@@ -9,6 +9,7 @@ describe('test/controller/order.controller.test.ts', () => {
   let token;
   let addressId;
   let blindBoxId;
+  let orderService; // 提升到 describe 作用域
   // let boxItemId; // 已不再需要
 
   beforeAll(async () => {
@@ -46,6 +47,8 @@ describe('test/controller/order.controller.test.ts', () => {
       .send({ blind_box_id: blindBoxId, name: '奖品A', image: 'a.jpg', rarity: 1, probability: 1.0 });
     expect(itemRes.body.code).toBe(200);
     // boxItemId = itemRes.body.data.id; // 已不再需要
+    // 初始化 orderService
+    orderService = await app.getApplicationContext().getAsync(OrderService);
   });
 
   afterAll(async () => {
@@ -53,6 +56,8 @@ describe('test/controller/order.controller.test.ts', () => {
   });
 
   it('should create and pay order with balance, then auto deliver and complete', async () => {
+    // 充值，确保余额充足
+    await orderService.userRepo.update(userId, { balance: 100 });
     // 创建订单
     const createRes = await createHttpRequest(app)
       .post('/api/pay/order/create')
@@ -73,7 +78,6 @@ describe('test/controller/order.controller.test.ts', () => {
       .send({ order_id: orderId });
     expect(payRes.body.success).toBe(true);
     // 手动将订单状态改为 delivered
-    const orderService = await app.getApplicationContext().getAsync(OrderService);
     await orderService.orderRepo.update(orderId, { status: 'delivered' });
     // 确认收货
     const confirmRes = await createHttpRequest(app)
@@ -98,7 +102,6 @@ describe('test/controller/order.controller.test.ts', () => {
     expect(createRes.body.success).toBe(true);
     const orderId = createRes.body.data.order.id;
     // 手动将订单状态改为 cancelled
-    const orderService = await app.getApplicationContext().getAsync(OrderService);
     await orderService.orderRepo.update(orderId, { status: 'cancelled', cancelled: true });
     // 查询订单状态
     const getRes = await createHttpRequest(app)
@@ -124,7 +127,6 @@ describe('test/controller/order.controller.test.ts', () => {
     expect(createRes.body.success).toBe(true);
     const orderId = createRes.body.data.order.id;
     // 手动将订单状态改为 cancelled
-    const orderService = await app.getApplicationContext().getAsync(OrderService);
     await orderService.orderRepo.update(orderId, { status: 'cancelled', cancelled: true });
     // 再次尝试支付
     const payRes = await createHttpRequest(app)
@@ -136,6 +138,8 @@ describe('test/controller/order.controller.test.ts', () => {
   });
 
   it('should open blindbox after order completed', async () => {
+    // 充值，确保余额充足
+    await orderService.userRepo.update(userId, { balance: 100 });
     // 创建订单
     const createRes = await createHttpRequest(app)
       .post('/api/pay/order/create')
@@ -156,7 +160,6 @@ describe('test/controller/order.controller.test.ts', () => {
       .send({ order_id: orderId });
     expect(payRes.body.success).toBe(true);
     // 手动将订单状态改为 delivered
-    const orderService = await app.getApplicationContext().getAsync(OrderService);
     await orderService.orderRepo.update(orderId, { status: 'delivered' });
     // 确认收货
     const confirmRes = await createHttpRequest(app)
@@ -314,7 +317,6 @@ describe('test/controller/order.controller.test.ts', () => {
       });
     const orderItemId = createRes.body.data.items[0].id;
     // mock orderService.orderRepo.findOne 返回 null
-    const orderService = await app.getApplicationContext().getAsync(OrderService);
     const spy = jest.spyOn(orderService.orderRepo, 'findOne').mockResolvedValueOnce(null);
     const res = await createHttpRequest(app)
       .post('/api/pay/order/open')
@@ -344,7 +346,6 @@ describe('test/controller/order.controller.test.ts', () => {
       });
     const orderId = createRes.body.data.order.id;
     // 支付并完成订单
-    const orderService = await app.getApplicationContext().getAsync(OrderService);
     await orderService.orderRepo.update(orderId, { status: 'completed' });
     await createHttpRequest(app)
       .post('/api/pay/order/confirm')
@@ -401,7 +402,6 @@ describe('test/controller/order.controller.test.ts', () => {
       });
     const orderId = createRes.body.data.order.id;
     // 支付并完成订单
-    const orderService = await app.getApplicationContext().getAsync(OrderService);
     await orderService.orderRepo.update(orderId, { status: 'delivered' });
     await createHttpRequest(app)
       .post('/api/pay/order/confirm')

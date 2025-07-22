@@ -2,11 +2,15 @@ import { Provide } from '@midwayjs/core';
 import { InjectEntityModel } from '@midwayjs/typeorm';
 import { Repository } from 'typeorm';
 import { Cart } from '../../entity/pay/cart.entity';
+import { BlindBox } from '../../entity/blindbox/blindbox.entity';
 
 @Provide()
 export class CartService {
   @InjectEntityModel(Cart)
   cartRepo: Repository<Cart>;
+
+  @InjectEntityModel(BlindBox)
+  blindBoxRepo: Repository<BlindBox>;
 
   async addToCart(userId: number, blindBoxId: number, quantity: number) {
     let cartItem = await this.cartRepo.findOne({ where: { user_id: userId, blind_box_id: blindBoxId } });
@@ -20,7 +24,14 @@ export class CartService {
   }
 
   async getCartList(userId: number) {
-    return this.cartRepo.find({ where: { user_id: userId } });
+    const cartList = await this.cartRepo.find({ where: { user_id: userId } });
+    // 查询盲盒详情并组装
+    const result = [];
+    for (const item of cartList) {
+      const blindBox = await this.blindBoxRepo.findOne({ where: { id: item.blind_box_id } });
+      result.push({ ...item, blindBox });
+    }
+    return result;
   }
 
   async updateCartItem(cartId: number, quantity: number) {

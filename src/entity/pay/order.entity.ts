@@ -45,6 +45,9 @@ export class Order {
   @JoinColumn({ name: 'address_id' })
   address: UserAddress;
 
+  @Column({ length: 64, nullable: true })
+  alipay_trade_no?: string;
+
   @OneToMany(() => OrderItem, item => item.order)
   orderItems: OrderItem[];
 
