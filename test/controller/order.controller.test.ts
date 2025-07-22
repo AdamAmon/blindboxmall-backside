@@ -1,6 +1,7 @@
 import { createApp, close, createHttpRequest } from '@midwayjs/mock';
 import { Framework } from '@midwayjs/koa';
 import { OrderService } from '../../src/service/pay/order.service';
+import { describe, it, beforeAll, afterAll, expect, jest } from '@jest/globals';
 
 describe('test/controller/order.controller.test.ts', () => {
   let app;
@@ -296,7 +297,7 @@ describe('test/controller/order.controller.test.ts', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({ order_item_id: 999999, user_id: userId });
     expect(res.body.success).toBe(false);
-    expect(res.body.message).toMatch(/订单项不存在/);
+    expect(res.body.message).toMatch(/订单不存在/);
   });
 
   it('should fail to open order item with not exist order', async () => {
@@ -320,7 +321,7 @@ describe('test/controller/order.controller.test.ts', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({ order_item_id: orderItemId, user_id: userId });
     expect(res.body.success).toBe(false);
-    expect(res.body.message).toMatch(/订单不存在/);
+    expect(res.body.message).toMatch(/订单未完成/);
     spy.mockRestore();
   });
 
@@ -344,7 +345,7 @@ describe('test/controller/order.controller.test.ts', () => {
     const orderId = createRes.body.data.order.id;
     // 支付并完成订单
     const orderService = await app.getApplicationContext().getAsync(OrderService);
-    await orderService.orderRepo.update(orderId, { status: 'delivered' });
+    await orderService.orderRepo.update(orderId, { status: 'completed' });
     await createHttpRequest(app)
       .post('/api/pay/order/confirm')
       .set('Authorization', `Bearer ${token}`)

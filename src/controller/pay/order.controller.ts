@@ -66,6 +66,11 @@ export class OrderController {
   // 打开盲盒（抽奖）
   @Post('/open')
   async openOrderItem(@Body('order_item_id') orderItemId: number, @Body('user_id') userId: number) {
-    return await this.orderService.openOrderItem(orderItemId, userId, this.blindBoxService);
+    try {
+      const item = await this.orderService.openOrderItem(orderItemId, userId, this.blindBoxService);
+      return { success: true, item };
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
   }
 } 

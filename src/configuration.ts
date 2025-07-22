@@ -11,6 +11,7 @@ import * as typeorm from '@midwayjs/typeorm';
 import { DefaultErrorFilter } from './filter/default.filter';
 import * as swagger from '@midwayjs/swagger';
 import * as busboy from '@midwayjs/busboy';
+import { Cart } from './entity/pay/cart.entity';
 
 
 @Configuration({
@@ -40,3 +41,5 @@ export class MainConfiguration {
     this.app.useFilter([DefaultErrorFilter]);
   }
 }
+// TypeORM实体注册
+module.exports.entities = [Cart];

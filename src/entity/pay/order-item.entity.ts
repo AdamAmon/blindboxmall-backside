@@ -39,6 +39,12 @@ export class OrderItem {
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   price: number;
 
+  @Column({ type: 'boolean', default: false })
+  is_opened: boolean;
+
+  @Column({ type: 'datetime', nullable: true })
+  opened_at: Date;
+
   @CreateDateColumn()
   created_at: Date;
 } 

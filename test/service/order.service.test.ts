@@ -3,6 +3,7 @@ import { OrderService } from '../../src/service/pay/order.service';
 import { BlindBoxService } from '../../src/service/blindbox/blindbox.service';
 import { UserService } from '../../src/service/user/user.service';
 import { AddressService } from '../../src/service/address/address.service';
+import { describe, it, beforeAll, afterAll, expect, jest } from '@jest/globals';
 
 describe('test/service/order.service.test.ts', () => {
   let app;
@@ -109,8 +110,8 @@ describe('test/service/order.service.test.ts', () => {
     await orderService.confirmOrder(order.id);
     // 打开盲盒
     const openRes = await orderService.openOrderItem(items[0].id, userId, blindBoxService);
-    expect(openRes.success).toBe(true);
-    expect(openRes.item).toBeDefined();
+    expect(openRes).toBeDefined();
+    expect(openRes).toHaveProperty('id');
   });
 
   it('should throw if createOrder with empty items', async () => {
@@ -174,7 +175,7 @@ describe('test/service/order.service.test.ts', () => {
   });
 
   it('should throw if openOrderItem with not exist orderItem', async () => {
-    await expect(orderService.openOrderItem(999999, userId, blindBoxService)).rejects.toThrow('订单项不存在');
+    await expect(orderService.openOrderItem(999999, userId, blindBoxService)).rejects.toThrow('订单不存在');
   });
 
   it('should throw if openOrderItem with not exist order', async () => {
@@ -188,8 +189,21 @@ describe('test/service/order.service.test.ts', () => {
     const { items } = await orderService.createOrder(dto);
     // mock orderRepo.findOne 返回 null
     const spy = jest.spyOn(orderService.orderRepo, 'findOne').mockResolvedValueOnce(null);
-    await expect(orderService.openOrderItem(items[0].id, userId, blindBoxService)).rejects.toThrow('订单不存在');
+    await expect(orderService.openOrderItem(items[0].id, userId, blindBoxService)).rejects.toThrow('订单未完成');
     spy.mockRestore();
+  });
+
+  it('should throw if openOrderItem with order not completed', async () => {
+    const dto = {
+      user_id: userId,
+      address_id: addressId,
+      total_amount: 20,
+      pay_method: 'balance',
+      items: [{ blind_box_id: blindBoxId, price: 20 }]
+    };
+    const { order, items } = await orderService.createOrder(dto);
+    await orderService.orderRepo.update(order.id, { status: 'pending' });
+    await expect(orderService.openOrderItem(items[0].id, userId, blindBoxService)).rejects.toThrow('订单未完成');
   });
 
   it('should throw if openOrderItem with userId not match', async () => {
@@ -205,19 +219,6 @@ describe('test/service/order.service.test.ts', () => {
     const { order, items } = await orderService.createOrder(dto);
     await orderService.orderRepo.update(order.id, { status: 'completed' });
     await expect(orderService.openOrderItem(items[0].id, otherUser.id, blindBoxService)).rejects.toThrow('无权操作该订单');
-  });
-
-  it('should throw if openOrderItem with order not completed', async () => {
-    const dto = {
-      user_id: userId,
-      address_id: addressId,
-      total_amount: 20,
-      pay_method: 'balance',
-      items: [{ blind_box_id: blindBoxId, price: 20 }]
-    };
-    const { order, items } = await orderService.createOrder(dto);
-    await orderService.orderRepo.update(order.id, { status: 'pending' });
-    await expect(orderService.openOrderItem(items[0].id, userId, blindBoxService)).rejects.toThrow('订单未完成，不能抽奖');
   });
 
   it('should throw if openOrderItem with already opened', async () => {

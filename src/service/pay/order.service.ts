@@ -15,7 +15,7 @@ export class OrderService {
   @InjectEntityModel(OrderItem)
   orderItemRepo: Repository<OrderItem>;
 
-  // 创建订单及订单项
+  // 创建订单及订单项（支持批量）
   async createOrder(dto: CreateOrderDTO) {
     if (!dto.items || !Array.isArray(dto.items) || dto.items.length === 0) {
       throw new MidwayHttpError('订单项不能为空', 400);
@@ -30,13 +30,15 @@ export class OrderService {
       cancelled: false,
     });
     const savedOrder = await this.orderRepo.save(order);
-    // 创建订单项
+    // 创建订单项（支持批量）
     const items = dto.items.map((item: CreateOrderItemDTO) =>
       this.orderItemRepo.create({
         order_id: savedOrder.id,
         blind_box_id: item.blind_box_id,
-        item_id: item.item_id,
+        item_id: null, // 未开盒
         price: item.price,
+        is_opened: false,
+        opened_at: null,
       })
     );
     await this.orderItemRepo.save(items);
@@ -85,7 +87,7 @@ export class OrderService {
       order.pay_time = new Date();
       await this.orderRepo.save(order);
       // 支付后自动送达（仅非测试环境下注册定时器）
-      if (process.env.NODE_ENV !== 'unittest') {
+      if (process.env.NODE_ENV !== 'unittest' && process.env.NODE_ENV !== 'test') {
         setTimeout(async () => {
           const latest = await this.orderRepo.findOne({ where: { id: orderId } });
           if (latest && latest.status === 'delivering') {
@@ -138,21 +140,20 @@ export class OrderService {
     return result;
   }
 
-  // 用户打开盲盒（抽奖）
+  // 开盒逻辑，支持逐个开盒
   async openOrderItem(orderItemId: number, userId: number, blindBoxService: BlindBoxService) {
-    // 查找订单项
-    const orderItem = await this.orderItemRepo.findOne({ where: { id: orderItemId } });
-    if (!orderItem) throw new MidwayHttpError('订单项不存在', 404);
-    // 查找订单
-    const order = await this.orderRepo.findOne({ where: { id: orderItem.order_id } });
-    if (!order) throw new MidwayHttpError('订单不存在', 404);
-    if (order.user_id !== userId) throw new MidwayHttpError('无权操作该订单', 403);
-    if (order.status !== 'completed') throw new MidwayHttpError('订单未完成，不能抽奖', 400);
-    if (orderItem.item_id) throw new MidwayHttpError('该盲盒已打开', 400);
-    // 调用盲盒抽奖逻辑
-    const drawnItem = await blindBoxService.drawRandomItemByBoxId(orderItem.blind_box_id);
-    orderItem.item_id = drawnItem.id;
+    const orderItem = await this.orderItemRepo.findOne({ where: { id: orderItemId }, relations: ['order'] });
+    if (!orderItem) throw new MidwayHttpError('订单不存在', 404);
+    if (orderItem.order.user_id !== userId) throw new MidwayHttpError('无权操作该订单', 403);
+    if (orderItem.is_opened) throw new MidwayHttpError('该盲盒已打开', 400);
+    // 仅允许已完成订单开盒
+    if (orderItem.order.status !== 'completed') throw new MidwayHttpError('订单未完成', 400);
+    // 抽奖逻辑
+    const boxItem = await blindBoxService.drawRandomItemByBoxId(orderItem.blind_box_id);
+    orderItem.item_id = boxItem.id;
+    orderItem.is_opened = true;
+    orderItem.opened_at = new Date();
     await this.orderItemRepo.save(orderItem);
-    return { success: true, item: drawnItem };
+    return boxItem;
   }
 } 
