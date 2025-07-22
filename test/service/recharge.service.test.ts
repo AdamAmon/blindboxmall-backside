@@ -1,6 +1,7 @@
 import { createApp, close } from '@midwayjs/mock';
 import { RechargeService } from '../../src/service/pay/recharge.service';
 import { UserService } from '../../src/service/user/user.service';
+import { describe, it, beforeAll, afterAll, expect, jest } from '@jest/globals';
 
 describe('test/service/pay.service.test.ts', () => {
   let app;

@@ -3,6 +3,7 @@ import { AddressService } from '../../src/service/address/address.service';
 import { UserService } from '../../src/service/user/user.service';
 import { RegisterDTO } from '../../src/dto/user/user.dto';
 import { CreateAddressDTO, UpdateAddressDTO } from '../../src/dto/address/address.dto';
+import { describe, it, beforeAll, afterAll, expect } from '@jest/globals';
 
 describe('test/service/address.service.test.ts', () => {
   let app;

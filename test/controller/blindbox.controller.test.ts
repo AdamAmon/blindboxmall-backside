@@ -1,7 +1,6 @@
 import { createApp, createHttpRequest } from '@midwayjs/mock';
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from '@jest/globals';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, jest } from '@jest/globals';
 import { BlindBoxService } from '../../src/service/blindbox/blindbox.service';
-
 
 let app;
 let token;

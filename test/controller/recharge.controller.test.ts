@@ -1,6 +1,7 @@
 import { createApp, close, createHttpRequest } from '@midwayjs/mock';
 import { Framework } from '@midwayjs/koa';
 import { RechargeService } from '../../src/service/pay/recharge.service';
+import { describe, it, expect, beforeAll, afterAll, jest } from '@jest/globals';
 
 describe('test/controller/pay.controller.test.ts', () => {
   let app;
