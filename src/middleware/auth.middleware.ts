@@ -11,6 +11,7 @@ export class AuthMiddleware {
         '/api/auth/login',
         '/api/auth/register',
         '/api/pay/notify',
+        '/api/pay/order/notify', // 新增，允许订单支付回调无需鉴权
         '/api/blindbox/test', // 添加测试路径
         '/api/blindbox/debug', // 添加调试路径
       ];

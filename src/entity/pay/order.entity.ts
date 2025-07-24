@@ -48,6 +48,9 @@ export class Order {
   @Column({ length: 64, nullable: true })
   alipay_trade_no?: string;
 
+  @Column({ length: 64, nullable: true })
+  out_trade_no?: string; // 支付宝订单号
+
   @OneToMany(() => OrderItem, item => item.order)
   orderItems: OrderItem[];
 

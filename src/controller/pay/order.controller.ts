@@ -82,6 +82,20 @@ export class OrderController {
   // 支付宝支付回调
   @Post('/alipayNotify')
   async alipayNotify(@Body('order_id') orderId: number, @Body('trade_no') tradeNo: string) {
-    return await this.orderService.alipayOrderNotify(orderId, tradeNo);
+    // 兼容老接口，组装参数
+    const params = { out_trade_no: orderId, trade_no: tradeNo, trade_status: 'TRADE_SUCCESS' };
+    return await this.orderService.handleAlipayNotify(JSON.stringify(params));
+  }
+
+  // 新增：支付宝异步回调接口
+  @Post('/notify')
+  async alipayNotifyAsync(@Body() params: Record<string, unknown>) {
+    // 兼容支付宝form-data和json
+    try {
+      const result = await this.orderService.handleAlipayNotify(typeof params === 'string' ? params : JSON.stringify(params));
+      return result;
+    } catch (error) {
+      return 'fail';
+    }
   }
 } 
