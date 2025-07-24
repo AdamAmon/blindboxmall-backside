@@ -12,6 +12,18 @@ import { DefaultErrorFilter } from './filter/default.filter';
 import * as swagger from '@midwayjs/swagger';
 import * as busboy from '@midwayjs/busboy';
 import { Cart } from './entity/pay/cart.entity';
+import { Order } from './entity/pay/order.entity';
+import { OrderItem } from './entity/pay/order-item.entity';
+import { Recharge } from './entity/pay/recharge.entity';
+import { BlindBox } from './entity/blindbox/blindbox.entity';
+import { BoxItem } from './entity/blindbox/box-item.entity';
+import { User } from './entity/user/user.entity';
+// 玩家秀相关
+import { PlayerShow } from './entity/community/player-show.entity';
+import { PlayerShowComment } from './entity/community/player-show-comment.entity';
+import { PlayerShowLike } from './entity/community/player-show-like.entity';
+import { PlayerShowCommentLike } from './entity/community/player-show-comment-like.entity';
+import * as staticFile from '@midwayjs/static-file';
 
 
 @Configuration({
@@ -23,6 +35,7 @@ import { Cart } from './entity/pay/cart.entity';
     crossDomain,
     busboy,
     jwt,
+    staticFile, // 新增静态资源模块
     {
       component: info,
       enabledEnvironment: ['local'],
@@ -42,4 +55,15 @@ export class MainConfiguration {
   }
 }
 // TypeORM实体注册
-module.exports.entities = [Cart];
+module.exports.entities = [
+  Cart, Order, OrderItem, Recharge,
+  BlindBox, BoxItem, User,
+  PlayerShow, PlayerShowComment, PlayerShowLike, PlayerShowCommentLike
+];
+
+// 静态资源配置
+module.exports.staticFile = {
+  dirs: {
+    default: { prefix: '/', dir: 'public' }
+  }
+};
