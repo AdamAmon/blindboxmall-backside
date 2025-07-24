@@ -45,7 +45,7 @@ export default {
         ? 'test-public-key'
         : fs.readFileSync(path.join(__dirname, '../../public_key.pem'), 'utf8'),
     gateway: 'https://openapi-sandbox.dl.alipaydev.com/gateway.do',
-    notifyUrl: 'http://g6c2ef2d.natappfree.cc/api/pay/notify',
+    notifyUrl: 'http://q885f528.natappfree.cc/api/pay/notify',
     charset: 'utf-8',
     signType: 'RSA2',
     keyType: 'PKCS8',

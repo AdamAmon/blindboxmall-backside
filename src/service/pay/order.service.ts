@@ -1,4 +1,4 @@
-import { Provide } from '@midwayjs/core';
+import { Provide, Config } from '@midwayjs/core';
 import { InjectEntityModel } from '@midwayjs/typeorm';
 import { Repository } from 'typeorm';
 import { Order } from '../../entity/pay/order.entity';
@@ -8,6 +8,7 @@ import { MidwayHttpError } from '@midwayjs/core';
 import { BlindBoxService } from '../blindbox/blindbox.service';
 import { User } from '../../entity/user/user.entity';
 import { BlindBox } from '../../entity/blindbox/blindbox.entity';
+import { AlipaySdk } from 'alipay-sdk';
 
 @Provide()
 export class OrderService {
@@ -22,6 +23,22 @@ export class OrderService {
 
   @InjectEntityModel(BlindBox)
   blindBoxRepo: Repository<BlindBox>;
+
+  @Config('alipay')
+  alipayConfig;
+
+  getAlipaySdk() {
+    return new AlipaySdk({
+      appId: this.alipayConfig.appId,
+      privateKey: this.alipayConfig.privateKey,
+      alipayPublicKey: this.alipayConfig.alipayPublicKey,
+      gateway: this.alipayConfig.gateway,
+      signType: 'RSA2',
+      keyType: 'PKCS8',
+      timeout: 5000,
+      camelcase: true,
+    });
+  }
 
   // 创建订单及订单项（支持批量）
   async createOrder(dto: CreateOrderDTO) {
@@ -127,24 +144,75 @@ export class OrderService {
     }
     // 支付宝支付
     if (order.pay_method === 'alipay') {
-      // 模拟生成支付链接，订单状态保持pending，需回调确认支付
-      const payUrl = `https://mock.alipay.com/pay?orderId=${orderId}`;
-      // 实际项目应生成真实支付链接并等待回调
+      // 生成支付宝支付链接
+      let outTradeNo = order.out_trade_no;
+      if (!outTradeNo) {
+        outTradeNo = 'ORDER' + Date.now() + Math.floor(Math.random() * 10000);
+        order.out_trade_no = outTradeNo;
+        await this.orderRepo.save(order);
+      }
+      const alipaySdk = this.getAlipaySdk();
+      const bizContent = {
+        subject: '盲盒商城订单',
+        out_trade_no: outTradeNo,
+        total_amount: Number(order.total_amount).toFixed(2),
+        product_code: 'FAST_INSTANT_TRADE_PAY',
+      };
+      let payUrl;
+      try {
+        payUrl = await alipaySdk.pageExecute('alipay.trade.page.pay', 'GET', {
+          bizContent,
+          notifyUrl: this.alipayConfig.notifyUrl.replace('/notify', '/order/notify'),
+        });
+      } catch (err) {
+        throw new MidwayHttpError('支付宝下单失败: ' + err.message, 500);
+      }
       return { success: true, pay_method: 'alipay', payUrl };
     }
     throw new MidwayHttpError('不支持的支付方式', 400);
   }
 
-  // 新增：支付宝支付回调模拟接口
-  async alipayCallback(orderId: number) {
-    const order = await this.orderRepo.findOne({ where: { id: orderId } });
-    if (!order) throw new MidwayHttpError('订单不存在', 404);
-    if (order.status !== 'pending') throw new MidwayHttpError('订单状态异常', 400);
+  // 新增：支付宝异步回调接口
+  async handleAlipayNotify(rawBody: string) {
+    // 解析参数
+    const params = typeof rawBody === 'string' ? JSON.parse(rawBody) : rawBody;
+    console.log('[支付宝回调] 收到参数:', params);
+    if (!params.out_trade_no) {
+      console.error('[支付宝回调] 缺少out_trade_no参数:', params);
+      throw new MidwayHttpError('缺少out_trade_no参数', 400);
+    }
+    if (params.trade_status !== 'TRADE_SUCCESS') {
+      console.log('[支付宝回调] trade_status非TRADE_SUCCESS:', params.trade_status);
+      return 'success';
+    }
+    // 校验签名
+    try {
+      const alipaySdk = this.getAlipaySdk();
+      const isValid = alipaySdk.checkNotifySignV2(params);
+      if (!isValid) {
+        // 签名失败可记录日志
+        console.warn('[支付宝回调] 签名校验失败:', params);
+      }
+    } catch (e) {
+      // 校验签名异常可记录日志
+      console.error('[支付宝回调] 签名校验异常:', e, params);
+    }
+    // 查找订单
+    const order = await this.orderRepo.findOne({ where: { out_trade_no: params.out_trade_no } });
+    if (!order) {
+      console.error('[支付宝回调] 未找到订单 out_trade_no:', params.out_trade_no);
+      throw new MidwayHttpError('订单不存在', 404);
+    }
+    if (order.status !== 'pending') {
+      console.log('[支付宝回调] 订单已处理，当前状态:', order.status);
+      return 'success';
+    }
     order.status = 'delivering';
     order.pay_time = new Date();
+    order.alipay_trade_no = params.trade_no;
     await this.orderRepo.save(order);
     // 扣减库存
-    const items = await this.orderItemRepo.find({ where: { order_id: orderId } });
+    const items = await this.orderItemRepo.find({ where: { order_id: order.id } });
     for (const item of items) {
       const blindBox = await this.blindBoxRepo.findOne({ where: { id: item.blind_box_id } });
       if (blindBox) {
@@ -152,47 +220,17 @@ export class OrderService {
         await this.blindBoxRepo.save(blindBox);
       }
     }
-    // 支付后自动送达（仅非测试环境下注册定时器）
+    // 自动送达
     if (process.env.NODE_ENV !== 'unittest' && process.env.NODE_ENV !== 'test') {
       setTimeout(async () => {
-        const latest = await this.orderRepo.findOne({ where: { id: orderId } });
+        const latest = await this.orderRepo.findOne({ where: { id: order.id } });
         if (latest && latest.status === 'delivering') {
           latest.status = 'delivered';
           await this.orderRepo.save(latest);
         }
-      }, 30000); // 30秒
+      }, 30000);
     }
-    return { success: true, pay_method: 'alipay' };
-  }
-
-  // 新增：订单支付宝支付回调模拟接口
-  async alipayOrderNotify(orderId: number, trade_no: string) {
-    const order = await this.orderRepo.findOne({ where: { id: orderId } });
-    if (!order) throw new MidwayHttpError('订单不存在', 404);
-    if (order.status !== 'pending') return 'success'; // 已处理
-    order.status = 'delivering';
-    order.pay_time = new Date();
-    order.alipay_trade_no = trade_no;
-    await this.orderRepo.save(order);
-    // 扣减库存
-    const items = await this.orderItemRepo.find({ where: { order_id: orderId } });
-    for (const item of items) {
-      const blindBox = await this.blindBoxRepo.findOne({ where: { id: item.blind_box_id } });
-      if (blindBox) {
-        blindBox.stock = Math.max(0, blindBox.stock - 1);
-        await this.blindBoxRepo.save(blindBox);
-      }
-    }
-    // 支付后自动送达（仅非测试环境下注册定时器）
-    if (process.env.NODE_ENV !== 'unittest' && process.env.NODE_ENV !== 'test') {
-      setTimeout(async () => {
-        const latest = await this.orderRepo.findOne({ where: { id: orderId } });
-        if (latest && latest.status === 'delivering') {
-          latest.status = 'delivered';
-          await this.orderRepo.save(latest);
-        }
-      }, 30000); // 30秒
-    }
+    console.log('[支付宝回调] 订单状态已更新为delivering，订单ID:', order.id);
     return 'success';
   }
 
@@ -223,7 +261,8 @@ export class OrderService {
     });
     const result = [];
     for (const order of orders) {
-      const items = await this.orderItemRepo.find({ where: { order_id: order.id } });
+      // join 出 item 字段
+      const items = await this.orderItemRepo.find({ where: { order_id: order.id }, relations: ['item'] });
       result.push({ order, items });
     }
     return result;
