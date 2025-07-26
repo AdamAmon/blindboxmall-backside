@@ -15,6 +15,9 @@ jobs:
           
       - name: Install dependencies
         run: npm ci
+
+      - name: Ensure public dir exists
+        run: mkdir -p blindboxmall-backside/public
         
       - name: Show Node.js version
         run: node --version && npm --version
