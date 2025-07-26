@@ -17,6 +17,9 @@ export class AuthMiddleware {
         '/api/blindbox', // 盲盒列表查询（公开接口）
         '/api/blindbox/categories', // 分类统计（公开接口）
         '/api/blindbox/hot-keywords', // 热门关键词（公开接口）
+        '/api/coupon', // 优惠券列表（公开接口）
+        '/api/user-coupon/clean-expired', // 清理过期优惠券（系统维护接口）
+        '/api/user-coupon/stats', // 优惠券统计信息（系统维护接口）
       ];
       if (noAuthPaths.includes(ctx.path)) {
         await next();

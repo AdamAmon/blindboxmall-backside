@@ -6,6 +6,13 @@ import { BlindBox } from '../entity/blindbox/blindbox.entity';
 import { BoxItem } from '../entity/blindbox/box-item.entity';
 import { Order } from '../entity/pay/order.entity';
 import { OrderItem } from '../entity/pay/order-item.entity';
+import { Cart } from '../entity/pay/cart.entity';
+import { Coupon } from '../entity/coupon/coupon.entity';
+import { UserCoupon } from '../entity/coupon/user-coupon.entity';
+import { PlayerShow } from '../entity/community/player-show.entity';
+import { PlayerShowComment } from '../entity/community/player-show-comment.entity';
+import { PlayerShowLike } from '../entity/community/player-show-like.entity';
+import { PlayerShowCommentLike } from '../entity/community/player-show-comment-like.entity';
 
 export default {
   koa: {
@@ -18,7 +25,10 @@ export default {
         database: ':memory:', // 使用内存数据库
         synchronize: true,
         logging: false,
-        entities: [User, UserAddress, Recharge, BlindBox, BoxItem, Order, OrderItem],
+        entities: [
+          User, UserAddress, Recharge, BlindBox, BoxItem, Order, OrderItem, Cart,
+          Coupon, UserCoupon, PlayerShow, PlayerShowComment, PlayerShowLike, PlayerShowCommentLike
+        ],
       },
     },
   },
