@@ -10,6 +10,7 @@ import {
 import { User } from '../user/user.entity';
 import { UserAddress } from '../address/user_address.entity';
 import { OrderItem } from './order-item.entity';
+import { UserCoupon } from '../coupon/user-coupon.entity';
 
 @Entity('orders')
 export class Order {
@@ -50,6 +51,16 @@ export class Order {
 
   @Column({ length: 64, nullable: true })
   out_trade_no?: string; // 支付宝订单号
+
+  @Column({ type: 'int', nullable: true })
+  user_coupon_id?: number; // 使用的优惠券ID
+
+  @ManyToOne(() => UserCoupon)
+  @JoinColumn({ name: 'user_coupon_id' })
+  user_coupon: UserCoupon;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  discount_amount: number; // 优惠金额
 
   @OneToMany(() => OrderItem, item => item.order)
   orderItems: OrderItem[];

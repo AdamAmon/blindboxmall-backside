@@ -24,6 +24,8 @@ import { PlayerShowComment } from './entity/community/player-show-comment.entity
 import { PlayerShowLike } from './entity/community/player-show-like.entity';
 import { PlayerShowCommentLike } from './entity/community/player-show-comment-like.entity';
 import * as staticFile from '@midwayjs/static-file';
+import { Coupon } from './entity/coupon/coupon.entity';
+import { UserCoupon } from './entity/coupon/user-coupon.entity';
 
 
 @Configuration({
@@ -58,7 +60,8 @@ export class MainConfiguration {
 module.exports.entities = [
   Cart, Order, OrderItem, Recharge,
   BlindBox, BoxItem, User,
-  PlayerShow, PlayerShowComment, PlayerShowLike, PlayerShowCommentLike
+  PlayerShow, PlayerShowComment, PlayerShowLike, PlayerShowCommentLike,
+  Coupon, UserCoupon
 ];
 
 // 静态资源配置

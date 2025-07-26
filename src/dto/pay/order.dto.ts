@@ -30,4 +30,10 @@ export class CreateOrderDTO {
 
   @Rule(RuleType.string().valid('balance', 'alipay').required())
   pay_method: string;
+
+  @Rule(RuleType.number().optional())
+  user_coupon_id?: number;
+
+  @Rule(RuleType.number().optional().min(0))
+  discount_amount?: number;
 } 

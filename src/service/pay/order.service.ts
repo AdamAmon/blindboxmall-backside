@@ -8,6 +8,8 @@ import { MidwayHttpError } from '@midwayjs/core';
 import { BlindBoxService } from '../blindbox/blindbox.service';
 import { User } from '../../entity/user/user.entity';
 import { BlindBox } from '../../entity/blindbox/blindbox.entity';
+import { UserCoupon } from '../../entity/coupon/user-coupon.entity';
+import { Coupon } from '../../entity/coupon/coupon.entity';
 import { AlipaySdk } from 'alipay-sdk';
 
 @Provide()
@@ -23,6 +25,12 @@ export class OrderService {
 
   @InjectEntityModel(BlindBox)
   blindBoxRepo: Repository<BlindBox>;
+
+  @InjectEntityModel(UserCoupon)
+  userCouponRepo: Repository<UserCoupon>;
+
+  @InjectEntityModel(Coupon)
+  couponRepo: Repository<Coupon>;
 
   @Config('alipay')
   alipayConfig;
@@ -40,11 +48,69 @@ export class OrderService {
     });
   }
 
+  // 验证优惠券
+  async validateCoupon(userCouponId: number, userId: number, totalAmount: number) {
+    if (!userCouponId) return { valid: true, discount: 0 };
+    
+    const userCoupon = await this.userCouponRepo.findOne({
+      where: { id: userCouponId, user_id: userId },
+      relations: ['coupon']
+    });
+    
+    if (!userCoupon) {
+      throw new MidwayHttpError('优惠券不存在', 400);
+    }
+    
+    if (userCoupon.status !== 0) {
+      throw new MidwayHttpError('优惠券已使用或已过期', 400);
+    }
+    
+    const now = new Date();
+    if (now < userCoupon.coupon.start_time || now > userCoupon.coupon.end_time) {
+      throw new MidwayHttpError('优惠券不在有效期内', 400);
+    }
+    
+    let discount = 0;
+    if (userCoupon.coupon.type === 1) {
+      // 满减券
+      if (totalAmount >= userCoupon.coupon.threshold) {
+        discount = userCoupon.coupon.amount;
+      }
+    } else if (userCoupon.coupon.type === 2) {
+      // 折扣券
+      discount = Number((totalAmount * (1 - userCoupon.coupon.amount)).toFixed(2));
+    }
+    
+    return { valid: true, discount, userCoupon };
+  }
+
   // 创建订单及订单项（支持批量）
   async createOrder(dto: CreateOrderDTO) {
     if (!dto.items || !Array.isArray(dto.items) || dto.items.length === 0) {
       throw new MidwayHttpError('订单项不能为空', 400);
     }
+    
+    // 计算原始总金额
+    const originalAmount = dto.items.reduce((sum, item) => sum + item.price, 0);
+    
+    // 验证优惠券
+    let discountAmount = 0;
+    let userCoupon = null;
+    if (dto.user_coupon_id) {
+      const validation = await this.validateCoupon(dto.user_coupon_id, dto.user_id, originalAmount);
+      if (!validation.valid) {
+        throw new MidwayHttpError('优惠券验证失败', 400);
+      }
+      discountAmount = validation.discount;
+      userCoupon = validation.userCoupon;
+    }
+    
+    // 验证最终金额
+    const finalAmount = originalAmount - discountAmount;
+    if (finalAmount !== dto.total_amount) {
+      throw new MidwayHttpError('订单金额计算错误', 400);
+    }
+    
     // 创建订单
     const order = this.orderRepo.create({
       user_id: dto.user_id,
@@ -53,8 +119,11 @@ export class OrderService {
       status: 'pending',
       pay_method: dto.pay_method,
       cancelled: false,
+      user_coupon_id: dto.user_coupon_id,
+      discount_amount: discountAmount,
     });
     const savedOrder = await this.orderRepo.save(order);
+    
     // 创建订单项（支持批量）
     const items = dto.items.map((item: CreateOrderItemDTO) =>
       this.orderItemRepo.create({
@@ -67,6 +136,14 @@ export class OrderService {
       })
     );
     await this.orderItemRepo.save(items);
+    
+    // 如果使用了优惠券，标记为已使用
+    if (userCoupon) {
+      userCoupon.status = 1;
+      userCoupon.used_at = new Date();
+      await this.userCouponRepo.save(userCoupon);
+    }
+    
     // 启动超时未支付自动取消（仅非测试环境下注册定时器）
     if (process.env.NODE_ENV !== 'unittest') {
       setTimeout(async () => {
@@ -88,11 +165,22 @@ export class OrderService {
       relations: ['orderItems', 'user', 'address'],
     });
     if (!order) throw new MidwayHttpError('订单不存在', 404);
+    
     // 补全每个订单项的盲盒详情
     for (const item of order.orderItems) {
       const blindBox = await this.blindBoxRepo.findOne({ where: { id: item.blind_box_id } });
       item.blindBox = blindBox;
     }
+    
+    // 如果使用了优惠券，获取优惠券详情
+    if (order.user_coupon_id) {
+      const userCoupon = await this.userCouponRepo.findOne({
+        where: { id: order.user_coupon_id },
+        relations: ['coupon']
+      });
+      order.user_coupon = userCoupon;
+    }
+    
     return order;
   }
 
