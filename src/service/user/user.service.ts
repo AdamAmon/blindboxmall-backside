@@ -66,6 +66,59 @@ export class UserService {
     return safeUser;
   }
 
+  /**
+   * 查询用户已获得奖品，支持稀有度、名称搜索、分页
+   * @param params { userId, rarity, keyword, page, limit }
+   */
+  async getUserPrizes(params: { userId: number, rarity?: number, keyword?: string, page?: number, limit?: number }) {
+    const { userId, rarity, keyword, page = 1, limit = 10 } = params;
+    // 只查已完成订单且已开盒的奖品
+    const qb = this.userModel.manager.createQueryBuilder('order_items', 'oi')
+      .innerJoin('orders', 'o', 'oi.order_id = o.id')
+      .leftJoin('box_items', 'bi', 'oi.item_id = bi.id')
+      .where('o.user_id = :userId', { userId })
+      .andWhere('o.status = :status', { status: 'completed' })
+      .andWhere('oi.is_opened = 1')
+      .andWhere('oi.item_id IS NOT NULL');
+    if (rarity) {
+      qb.andWhere('bi.rarity = :rarity', { rarity });
+    }
+    if (keyword) {
+      qb.andWhere('bi.name LIKE :keyword', { keyword: `%${keyword}%` });
+    }
+    qb.orderBy('oi.opened_at', 'DESC');
+    qb.skip((page - 1) * limit).take(limit);
+    const list = await qb.select([
+      'oi.id as orderItemId',
+      'oi.opened_at as openedAt',
+      'bi.id as prizeId',
+      'bi.name as prizeName',
+      'bi.image as prizeImage',
+      'bi.rarity as rarity',
+      'oi.price as price'
+    ]).getRawMany();
+    const total = await qb.getCount();
+    const result = list.map((row) => ({
+      orderItemId: row.orderItemId,
+      openedAt: row.openedAt,
+      prizeId: row.prizeId,
+      prizeName: row.prizeName,
+      prizeImage: row.prizeImage,
+      rarity: row.rarity,
+      price: row.price
+    }));
+    return {
+      code: 200,
+      data: {
+        list: result,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
+  }
+
   // 更新用户信息
   async updateUser(dto: UpdateUserDTO) {
     console.log('updateUser dto:', dto);

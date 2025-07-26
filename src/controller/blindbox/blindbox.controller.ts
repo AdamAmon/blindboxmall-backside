@@ -138,19 +138,40 @@ export class BlindBoxController {
   }
 
   /**
-   * 分页查询盲盒列表
+   * 分页查询盲盒列表（支持多条件筛选和排序）
    * @GET /api/blindbox
    */
   @Get('/')
   async findList(@Query() queryDto: QueryBlindBoxDTO) {
     try {
-      const { page, limit, keyword, status } = queryDto;
+      const { 
+        page, 
+        limit, 
+        keyword, 
+        status, 
+        minPrice, 
+        maxPrice, 
+        rarity, 
+        sortBy, 
+        order, 
+        category,
+        seller_id 
+      } = queryDto;
+      
       const params = {
         page: page ? Number(page) : 1,
         limit: limit ? Number(limit) : 10,
         keyword,
-        status: typeof status === 'string' ? Number(status) : status
+        status: typeof status === 'string' ? Number(status) : status,
+        minPrice: minPrice ? Number(minPrice) : undefined,
+        maxPrice: maxPrice ? Number(maxPrice) : undefined,
+        rarity,
+        sortBy: sortBy || 'created_at',
+        order: order || 'desc',
+        category,
+        seller_id: seller_id ? Number(seller_id) : undefined
       };
+      
       const result = await this.blindBoxService.findList(params);
       return {
         code: 200,
@@ -159,8 +180,9 @@ export class BlindBoxController {
         data: {
           list: result.list,
           total: result.total,
-          page: params.page,
-          limit: params.limit
+          page: result.page,
+          limit: result.limit,
+          totalPages: result.totalPages
         },
       };
     } catch (error) {
@@ -393,6 +415,54 @@ export class BlindBoxController {
       return {
         code: 500,
         message: '数据库连接失败: ' + error.message,
+      };
+    }
+  }
+
+  /**
+   * 获取盲盒分类统计
+   * @GET /api/blindbox/categories
+   */
+  @Get('/categories')
+  async getCategoryStats() {
+    try {
+      const stats = await this.blindBoxService.getCategoryStats();
+      return {
+        code: 200,
+        success: true,
+        message: '获取分类统计成功',
+        data: stats
+      };
+    } catch (error) {
+      return {
+        code: 500,
+        success: false,
+        message: error.message || '获取分类统计失败',
+        data: null
+      };
+    }
+  }
+
+  /**
+   * 获取热门搜索关键词
+   * @GET /api/blindbox/hot-keywords
+   */
+  @Get('/hot-keywords')
+  async getHotKeywords() {
+    try {
+      const keywords = await this.blindBoxService.getHotKeywords();
+      return {
+        code: 200,
+        success: true,
+        message: '获取热门关键词成功',
+        data: keywords
+      };
+    } catch (error) {
+      return {
+        code: 500,
+        success: false,
+        message: error.message || '获取热门关键词失败',
+        data: null
       };
     }
   }

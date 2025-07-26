@@ -95,6 +95,29 @@ export class QueryBlindBoxDTO {
 
   @Rule(RuleType.string().optional())
   seller_id?: string;
+
+  // 新增价格区间筛选
+  @Rule(RuleType.number().optional().min(0))
+  minPrice?: number;
+
+  @Rule(RuleType.number().optional().min(0))
+  maxPrice?: number;
+
+  // 新增稀有度筛选（支持多个，如 "1,2,3"）
+  @Rule(RuleType.string().optional())
+  rarity?: string;
+
+  // 新增排序字段
+  @Rule(RuleType.string().optional().valid('price', 'created_at', 'name', 'stock'))
+  sortBy?: string;
+
+  // 新增排序方式
+  @Rule(RuleType.string().optional().valid('asc', 'desc').default('desc'))
+  order?: string;
+
+  // 新增分类筛选（按稀有度分组）
+  @Rule(RuleType.string().optional().valid('all', 'common', 'rare', 'hidden'))
+  category?: string;
 }
 
 export class DrawBlindBoxDTO {
