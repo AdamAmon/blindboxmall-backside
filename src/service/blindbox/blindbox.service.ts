@@ -1,6 +1,6 @@
 import { Provide } from '@midwayjs/core';
 import { InjectEntityModel } from '@midwayjs/typeorm';
-import { Repository, Like, In } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { BlindBox } from '../../entity/blindbox/blindbox.entity';
 import { BoxItem } from '../../entity/blindbox/box-item.entity';
 import { User } from '../../entity/user/user.entity';
@@ -67,19 +67,116 @@ export class BlindBoxService {
   }
 
   /**
-   * 分页查询盲盒列表
+   * 分页查询盲盒列表（支持多条件筛选和排序）
    */
-  async findList({ page = 1, limit = 10, keyword, status }: { page?: number; limit?: number; keyword?: string; status?: number }) {
-    const where: Record<string, unknown> = {};
-    if (keyword) where.name = Like(`%${keyword}%`);
-    if (status !== undefined) where.status = Number(status);
-    const [list, total] = await this.blindBoxRepo.findAndCount({
-      where,
-      order: { id: 'DESC' },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
-    return { list, total };
+  async findList(params: {
+    page?: number;
+    limit?: number;
+    keyword?: string;
+    status?: number;
+    minPrice?: number;
+    maxPrice?: number;
+    rarity?: string;
+    sortBy?: string;
+    order?: string;
+    category?: string;
+    seller_id?: number;
+  }) {
+    const {
+      page = 1,
+      limit = 10,
+      keyword,
+      status,
+      minPrice,
+      maxPrice,
+      rarity,
+      sortBy = 'created_at',
+      order = 'desc',
+      category,
+      seller_id
+    } = params;
+
+    // 构建基础查询条件
+    const whereConditions: string[] = [];
+    const parameters: Record<string, unknown> = {};
+
+    // 关键词搜索（支持名称和描述）
+    if (keyword) {
+      whereConditions.push('(blindBox.name LIKE :keyword OR blindBox.description LIKE :keyword)');
+      parameters.keyword = `%${keyword}%`;
+    }
+    
+    // 状态筛选
+    if (status !== undefined) {
+      whereConditions.push('blindBox.status = :status');
+      parameters.status = Number(status);
+    }
+    
+    // 商家筛选
+    if (seller_id) {
+      whereConditions.push('blindBox.seller_id = :seller_id');
+      parameters.seller_id = seller_id;
+    }
+    
+    // 价格区间筛选
+    if (minPrice !== undefined) {
+      whereConditions.push('blindBox.price >= :minPrice');
+      parameters.minPrice = minPrice;
+    }
+    if (maxPrice !== undefined) {
+      whereConditions.push('blindBox.price <= :maxPrice');
+      parameters.maxPrice = maxPrice;
+    }
+
+    // 构建查询构建器
+    let queryBuilder = this.blindBoxRepo.createQueryBuilder('blindBox')
+      .leftJoinAndSelect('blindBox.boxItems', 'boxItems');
+
+    // 应用WHERE条件
+    if (whereConditions.length > 0) {
+      queryBuilder = queryBuilder.where(whereConditions.join(' AND '), parameters);
+    }
+
+    // 稀有度筛选
+    if (rarity) {
+      const rarityArray = rarity.split(',').map(r => Number(r.trim()));
+      queryBuilder = queryBuilder.andWhere('boxItems.rarity IN (:...rarity)', { rarity: rarityArray });
+    }
+
+    // 分类筛选（按稀有度分组）
+    if (category && category !== 'all') {
+      let rarityValue: number;
+      switch (category) {
+        case 'common':
+          rarityValue = 1;
+          break;
+        case 'rare':
+          rarityValue = 2;
+          break;
+        case 'hidden':
+          rarityValue = 3;
+          break;
+        default:
+          rarityValue = 1;
+      }
+      queryBuilder = queryBuilder.andWhere('boxItems.rarity = :categoryRarity', { categoryRarity: rarityValue });
+    }
+
+    // 应用排序和分页
+    queryBuilder = queryBuilder
+      .orderBy(`blindBox.${sortBy}`, order.toUpperCase() as 'ASC' | 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    const [list, total] = await queryBuilder.getManyAndCount();
+
+    return { 
+      list, 
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    };
   }
 
   async findOne(id: number) {
@@ -256,7 +353,61 @@ export class BlindBoxService {
       totalBlindBoxes,
       listedBlindBoxes,
       totalItems,
-      totalSales
+      totalSales,
     };
+  }
+
+  /**
+   * 获取盲盒分类统计（按稀有度分组）
+   */
+  async getCategoryStats() {
+    const stats = await this.boxItemRepo
+      .createQueryBuilder('item')
+      .leftJoin('item.blindBox', 'blindBox')
+      .select('item.rarity', 'rarity')
+      .addSelect('COUNT(DISTINCT blindBox.id)', 'blindBoxCount')
+      .addSelect('COUNT(item.id)', 'itemCount')
+      .where('blindBox.status = :status', { status: 1 })
+      .groupBy('item.rarity')
+      .getRawMany();
+
+    const categoryMap = {
+      1: 'common',
+      2: 'rare', 
+      3: 'hidden'
+    };
+
+    const result = {
+      common: { blindBoxCount: 0, itemCount: 0 },
+      rare: { blindBoxCount: 0, itemCount: 0 },
+      hidden: { blindBoxCount: 0, itemCount: 0 }
+    };
+
+    stats.forEach(stat => {
+      const category = categoryMap[stat.rarity];
+      if (category) {
+        result[category] = {
+          blindBoxCount: parseInt(stat.blindBoxCount),
+          itemCount: parseInt(stat.itemCount)
+        };
+      }
+    });
+
+    return result;
+  }
+
+  /**
+   * 获取热门搜索关键词
+   */
+  async getHotKeywords() {
+    // 这里可以实现搜索历史统计，暂时返回一些示例关键词
+    return [
+      '潮玩',
+      '手办',
+      '限定',
+      '联名',
+      '盲盒',
+      '收藏'
+    ];
   }
 } 

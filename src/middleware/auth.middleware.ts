@@ -14,6 +14,9 @@ export class AuthMiddleware {
         '/api/pay/order/notify', // 新增，允许订单支付回调无需鉴权
         '/api/blindbox/test', // 添加测试路径
         '/api/blindbox/debug', // 添加调试路径
+        '/api/blindbox', // 盲盒列表查询（公开接口）
+        '/api/blindbox/categories', // 分类统计（公开接口）
+        '/api/blindbox/hot-keywords', // 热门关键词（公开接口）
       ];
       if (noAuthPaths.includes(ctx.path)) {
         await next();
