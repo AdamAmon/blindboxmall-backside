@@ -25,7 +25,13 @@ export class AuthService {
       expiresIn = this.jwtConfig.expiresIn as string | number;
     }
     return jwt.sign(
-      { id: user.id, userId: user.id, role: user.role },
+      { 
+        id: user.id, 
+        userId: user.id, 
+        role: user.role,
+        username: user.username,
+        nickname: user.nickname
+      },
       this.jwtConfig.secret,
       expiresIn !== undefined ? ({ expiresIn } as unknown as import('jsonwebtoken').SignOptions) : undefined
     );

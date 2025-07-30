@@ -49,4 +49,10 @@ export class User {
   // 关联关系 - 使用字符串引用避免循环依赖
   @OneToMany('BlindBox', 'seller')
   blindBoxes: BlindBox[];
+
+  @OneToMany('BlindBoxComment', 'user')
+  blindBoxComments: unknown[];
+
+  @OneToMany('BlindBoxCommentLike', 'user')
+  blindBoxCommentLikes: unknown[];
 }

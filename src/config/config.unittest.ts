@@ -4,6 +4,8 @@ import { UserAddress } from '../entity/address/user_address.entity';
 import { Recharge } from '../entity/pay/recharge.entity';
 import { BlindBox } from '../entity/blindbox/blindbox.entity';
 import { BoxItem } from '../entity/blindbox/box-item.entity';
+import { BlindBoxComment } from '../entity/blindbox/blindbox-comment.entity';
+import { BlindBoxCommentLike } from '../entity/blindbox/blindbox-comment-like.entity';
 import { Order } from '../entity/pay/order.entity';
 import { OrderItem } from '../entity/pay/order-item.entity';
 import { Cart } from '../entity/pay/cart.entity';
@@ -26,7 +28,7 @@ export default {
         synchronize: true,
         logging: false,
         entities: [
-          User, UserAddress, Recharge, BlindBox, BoxItem, Order, OrderItem, Cart,
+          User, UserAddress, Recharge, BlindBox, BoxItem, BlindBoxComment, BlindBoxCommentLike, Order, OrderItem, Cart,
           Coupon, UserCoupon, PlayerShow, PlayerShowComment, PlayerShowLike, PlayerShowCommentLike
         ],
       },

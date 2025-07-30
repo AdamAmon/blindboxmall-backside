@@ -6,6 +6,7 @@ import * as jwt from 'jsonwebtoken';
 export class AuthMiddleware {
   resolve() {
     return async (ctx: Context, next: NextFunction) => {
+      
       // 排除不需要认证的路由
       const noAuthPaths = [
         '/api/auth/login',
@@ -17,10 +18,16 @@ export class AuthMiddleware {
         '/api/blindbox', // 盲盒列表查询（公开接口）
         '/api/blindbox/categories', // 分类统计（公开接口）
         '/api/blindbox/hot-keywords', // 热门关键词（公开接口）
+        '/api/blindbox/comment/list', // 评论列表查询（公开接口）
+        '/api/blindbox/comment/debug/all', // 调试接口（公开接口）
+        '/api/blindbox/comment/debug/clean', // 清理接口（公开接口）
+        '/api/blindbox/comment/debug/raw/', // 原生SQL调试接口（公开接口）
+        '/api/blindbox/comment/debug/raw/2', // 原生SQL调试接口（公开接口）
         '/api/coupon', // 优惠券列表（公开接口）
         '/api/user-coupon/clean-expired', // 清理过期优惠券（系统维护接口）
         '/api/user-coupon/stats', // 优惠券统计信息（系统维护接口）
       ];
+      
       if (noAuthPaths.includes(ctx.path)) {
         await next();
         return;
@@ -45,13 +52,25 @@ export class AuthMiddleware {
       try {
         const config = ctx.app.getConfig();
         const decoded = jwt.verify(token, config.jwt.secret) as Record<string, unknown>;
-        // 将JWT中的userId映射为id，保持向后兼容
+        
+        // 将JWT中的用户信息正确映射
+        const userId = (decoded as Record<string, unknown>).id || (decoded as Record<string, unknown>).userId;
         ctx.user = {
-          id: (decoded as { userId?: number }).userId,
-          role: (decoded as { role?: string }).role,
+          id: userId,
+          role: (decoded as Record<string, unknown>).role,
+          username: (decoded as Record<string, unknown>).username,
+          nickname: (decoded as Record<string, unknown>).nickname,
           ...decoded
         };
+        
+        // 确保用户ID存在
+        if (!ctx.user.id) {
+          ctx.status = 401;
+          ctx.body = { message: '用户ID无效' };
+          return;
+        }
       } catch (err) {
+        console.error('JWT验证失败:', err);
         ctx.status = 401;
         ctx.body = { message: '无效或过期的令牌' };
         return;

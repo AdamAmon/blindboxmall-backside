@@ -50,6 +50,9 @@ export class BlindBox {
   @OneToMany('BoxItem', 'blindBox')
   boxItems: BoxItem[];
 
+  @OneToMany('BlindBoxComment', 'blindBox')
+  comments: unknown[];
+
   @ManyToOne('User', 'blindBoxes')
   @JoinColumn({ name: 'seller_id' })
   seller: User;
