@@ -11,6 +11,7 @@ import {
   CreateBoxItemDTO,
 } from '../../dto/blindbox/blindbox.dto';
 import { MidwayHttpError } from '@midwayjs/core';
+import { DataSource } from 'typeorm';
 
 @Provide()
 export class BlindBoxService {
@@ -22,6 +23,8 @@ export class BlindBoxService {
 
   @InjectEntityModel(User)
   userRepo: Repository<User>;
+
+  constructor(private readonly dataSource: DataSource) {}
 
   /**
    * 创建盲盒
@@ -333,7 +336,7 @@ export class BlindBoxService {
     // 获取该商家的所有盲盒ID
     const sellerBlindBoxes = await this.blindBoxRepo.find({
       where: { seller_id: sellerId },
-      select: ['id']
+      select: ['id', 'stock', 'status', 'price']
     });
     
     const blindBoxIds = sellerBlindBoxes.map(box => box.id);
@@ -346,14 +349,20 @@ export class BlindBoxService {
       });
     }
 
-    // 获取总销量（这里暂时返回0，因为订单系统还未实现）
-    const totalSales = 0;
+    // 计算库存剩余
+    const totalStock = sellerBlindBoxes.reduce((sum, box) => sum + (box.stock || 0), 0);
+
+    // 计算总价值（所有盲盒的价格 * 库存）
+    const totalValue = sellerBlindBoxes.reduce((sum, box) => {
+      return sum + (Number(box.price) * (box.stock || 0));
+    }, 0);
 
     return {
       totalBlindBoxes,
       listedBlindBoxes,
       totalItems,
-      totalSales,
+      totalStock,
+      totalValue,
     };
   }
 
