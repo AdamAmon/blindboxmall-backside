@@ -30,6 +30,7 @@ export class PlayerShowService {
     const page = Number(params.page) || 1;
     const pageSize = Number(params.pageSize) || 10;
     const [list, total] = await this.showRepo.findAndCount({
+      relations: ['item', 'user'],
       order: { created_at: 'DESC' },
       skip: (page - 1) * pageSize,
       take: pageSize,
@@ -39,7 +40,10 @@ export class PlayerShowService {
 
   // 获取玩家秀详情
   async getShowDetail(id: number) {
-    return this.showRepo.findOne({ where: { id } });
+    return this.showRepo.findOne({ 
+      where: { id },
+      relations: ['item', 'user']
+    });
   }
 
   // 创建评论
@@ -49,7 +53,11 @@ export class PlayerShowService {
 
   // 获取评论树（递归）
   async getComments(showId: number) {
-    const all = await this.commentRepo.find({ where: { show_id: showId }, order: { created_at: 'ASC' } });
+    const all = await this.commentRepo.find({ 
+      where: { show_id: showId }, 
+      relations: ['user'],
+      order: { created_at: 'ASC' } 
+    });
     // 构建树结构
     const map = new Map();
     all.forEach(c => map.set(c.id, { ...c, children: [] }));
