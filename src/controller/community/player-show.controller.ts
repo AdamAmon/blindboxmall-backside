@@ -1,4 +1,5 @@
 import { Controller, Post, Get, Body, Query, Inject } from '@midwayjs/core';
+import { Context } from '@midwayjs/koa';
 import { PlayerShowService } from '../../service/community/player-show.service';
 
 @Controller('/api/community/show')
@@ -70,13 +71,44 @@ export class PlayerShowController {
   }
 
   @Post('/comment/like')
-  async likeComment(@Body('comment_id') commentId: number, @Body('user_id') userId: number) {
+  async likeComment(ctx: Context, @Body() body: { comment_id: number; user_id: number }) {
     try {
-      if (!commentId || !userId) return { success: false, message: '缺少参数' };
-      const data = await this.showService.likeComment(commentId, userId);
-      return { success: true, data };
+      const userId = ctx.user?.id;
+      if (!userId) {
+        ctx.status = 401;
+        return {
+          code: 401,
+          success: false,
+          message: '用户未登录',
+          data: null
+        };
+      }
+
+      if (!body.comment_id) {
+        ctx.status = 400;
+        return {
+          code: 400,
+          success: false,
+          message: '缺少comment_id参数',
+          data: null
+        };
+      }
+
+      const result = await this.showService.likeComment(body.comment_id, userId);
+      return {
+        code: 200,
+        success: true,
+        message: result.liked ? '点赞成功' : '取消点赞成功',
+        data: result,
+      };
     } catch (error) {
-      return { success: false, message: error.message };
+      ctx.status = 400;
+      return {
+        code: 400,
+        success: false,
+        message: error.message || '操作失败',
+        data: null
+      };
     }
   }
 } 
