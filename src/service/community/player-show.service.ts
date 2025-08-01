@@ -86,12 +86,28 @@ export class PlayerShowService {
 
   // 评论点赞/取消（去重）
   async likeComment(commentId: number, userId: number) {
+    // 验证评论是否存在
+    const comment = await this.commentRepo.findOne({ where: { id: commentId } });
+    if (!comment) {
+      throw new Error('评论不存在');
+    }
+
     const exist = await this.commentLikeRepo.findOne({ where: { comment_id: commentId, user_id: userId } });
     if (exist) {
+      // 取消点赞
       await this.commentLikeRepo.delete(exist.id);
+      // 更新评论的点赞数
+      await this.commentRepo.update(commentId, { 
+        like_count: Math.max(0, (comment.like_count || 0) - 1) 
+      });
       return { liked: false };
     } else {
+      // 添加点赞
       await this.commentLikeRepo.save({ comment_id: commentId, user_id: userId });
+      // 更新评论的点赞数
+      await this.commentRepo.update(commentId, { 
+        like_count: (comment.like_count || 0) + 1 
+      });
       return { liked: true };
     }
   }

@@ -38,6 +38,9 @@ export class PlayerShowComment {
   @Column({ type: 'text' })
   content: string;
 
+  @Column({ type: 'int', default: 0 })
+  like_count: number;
+
   @CreateDateColumn()
   created_at: Date;
 } 
