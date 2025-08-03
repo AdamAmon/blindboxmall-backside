@@ -390,7 +390,7 @@ describe('test/service/blindbox.service.test.ts', () => {
       expect(result.totalBlindBoxes).toBeGreaterThanOrEqual(0);
       expect(result.listedBlindBoxes).toBeGreaterThanOrEqual(0);
       expect(result.totalItems).toBeGreaterThanOrEqual(0);
-      expect(result.totalSales).toBeGreaterThanOrEqual(0);
+      expect(result.totalValue).toBeGreaterThanOrEqual(0);
     });
   });
 

@@ -12,8 +12,10 @@ export class UserCouponService {
   couponRepo: Repository<Coupon>;
 
   constructor() {
-    // 启动定时清理任务（每小时执行一次）
-    this.startCleanupTask();
+    // 只在非测试环境中启动定时任务
+    if (process.env.NODE_ENV !== 'unittest') {
+      this.startCleanupTask();
+    }
   }
 
   // 启动定时清理任务

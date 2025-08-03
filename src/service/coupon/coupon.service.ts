@@ -9,7 +9,10 @@ export class CouponService {
   couponRepo: Repository<Coupon>;
 
   constructor() {
-    this.startAutoOfflineTask();
+    // 只在非测试环境中启动定时任务
+    if (process.env.NODE_ENV !== 'unittest') {
+      this.startAutoOfflineTask();
+    }
   }
 
   private startAutoOfflineTask() {

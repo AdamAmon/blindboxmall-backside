@@ -24,10 +24,10 @@ module.exports = {
   coverageReporters: ['text', 'lcov', 'html'],
   coverageThreshold: {
     global: {
-      statements: 40,
-      branches: 40,
-      functions: 40,
-      lines: 40,
+      statements: 80,
+      branches: 80,
+      functions: 80,
+      lines: 80,
     },
   },
   // 测试环境变量
@@ -46,7 +46,12 @@ module.exports = {
   transform: {
     '^.+\\.ts$': [
       'ts-jest',
-      { tsconfig: 'tsconfig.json' }
+      { 
+        tsconfig: 'tsconfig.json',
+        useESM: false
+      }
     ]
-  }
+  },
+  // 支持ES模块
+  extensionsToTreatAsEsm: ['.ts']
 };
