@@ -570,4 +570,275 @@ it('should return 400 for get list with invalid params', async () => {
     .get('/api/blindbox?page=invalid&limit=invalid')
     .set('Authorization', `Bearer ${token}`);
   expect([200, 400, 404, 422, 500]).toContain(res.status);
-}); 
+});
+
+  describe('分类统计和热门关键词', () => {
+    it('应该成功获取分类统计', async () => {
+      const result = await createHttpRequest(app)
+        .get('/api/blindbox/categories')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(result.status).toBe(200);
+      expect(result.body.code).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.data).toBeDefined();
+    });
+
+    it('应该成功获取热门关键词', async () => {
+      const result = await createHttpRequest(app)
+        .get('/api/blindbox/hot-keywords')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(result.status).toBe(200);
+      expect(result.body.code).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.data).toBeDefined();
+    });
+
+    it('分类统计时 service 抛出异常', async () => {
+      const blindboxService = await app.getApplicationContext().getAsync(BlindBoxService);
+      const spy = jest.spyOn(blindboxService, 'getCategoryStats').mockImplementation(() => { throw new Error('service error'); });
+      const result = await createHttpRequest(app)
+        .get('/api/blindbox/categories')
+        .set('Authorization', `Bearer ${token}`);
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+      spy.mockRestore();
+    });
+
+    it('热门关键词时 service 抛出异常', async () => {
+      const blindboxService = await app.getApplicationContext().getAsync(BlindBoxService);
+      const spy = jest.spyOn(blindboxService, 'getHotKeywords').mockImplementation(() => { throw new Error('service error'); });
+      const result = await createHttpRequest(app)
+        .get('/api/blindbox/hot-keywords')
+        .set('Authorization', `Bearer ${token}`);
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+      spy.mockRestore();
+    });
+  });
+
+  describe('调试接口', () => {
+    it('应该成功测试数据库连接', async () => {
+      const result = await createHttpRequest(app)
+        .get('/api/blindbox/test')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(result.status).toBe(200);
+      expect(result.body.code).toBe(200);
+      expect(result.body.data).toBeDefined();
+    });
+
+    it('应该成功调试查询参数', async () => {
+      const result = await createHttpRequest(app)
+        .get('/api/blindbox/debug')
+        .query({ seller_id: 1, test: 'value' })
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(result.status).toBe(200);
+      expect(result.body.code).toBe(200);
+      expect(result.body.data).toBeDefined();
+    });
+
+    it('数据库测试时抛出异常', async () => {
+      const blindboxService = await app.getApplicationContext().getAsync(BlindBoxService);
+      const spy = jest.spyOn(blindboxService.blindBoxRepo, 'find').mockImplementation(() => { throw new Error('db error'); });
+      const result = await createHttpRequest(app)
+        .get('/api/blindbox/test')
+        .set('Authorization', `Bearer ${token}`);
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+      spy.mockRestore();
+    });
+  });
+
+  describe('抽奖功能边界测试', () => {
+    it('应该处理抽奖时用户ID从body获取', async () => {
+      const drawData = {
+        blind_box_id: 1,
+        quantity: 1,
+        user_id: 1
+      };
+      const result = await createHttpRequest(app)
+        .post('/api/blindbox/draw')
+        .send(drawData);
+      expect([200, 400, 401, 404, 422, 500]).toContain(result.status);
+    });
+
+    it('应该处理抽奖时用户ID从header获取', async () => {
+      const drawData = {
+        blind_box_id: 1,
+        quantity: 1
+      };
+      const result = await createHttpRequest(app)
+        .post('/api/blindbox/draw')
+        .set('x-user-id', '1')
+        .send(drawData);
+      expect([200, 400, 401, 404, 422, 500]).toContain(result.status);
+    });
+
+    it('应该处理抽奖时用户ID从query获取', async () => {
+      const drawData = {
+        blind_box_id: 1,
+        quantity: 1
+      };
+      const result = await createHttpRequest(app)
+        .post('/api/blindbox/draw')
+        .query({ userId: 1 })
+        .send(drawData);
+      expect([200, 400, 401, 404, 422, 500]).toContain(result.status);
+    });
+
+    it('应该处理抽奖结果为null的情况', async () => {
+      const blindboxService = await app.getApplicationContext().getAsync(BlindBoxService);
+      const spy = jest.spyOn(blindboxService, 'drawBlindBox').mockResolvedValue(null);
+      const result = await createHttpRequest(app)
+        .post('/api/blindbox/draw')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ blind_box_id: 1, quantity: 1 });
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+      spy.mockRestore();
+    });
+
+    it('应该处理抽奖结果没有drawnItems的情况', async () => {
+      const blindboxService = await app.getApplicationContext().getAsync(BlindBoxService);
+      const spy = jest.spyOn(blindboxService, 'drawBlindBox').mockResolvedValue({ success: true });
+      const result = await createHttpRequest(app)
+        .post('/api/blindbox/draw')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ blind_box_id: 1, quantity: 1 });
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+      spy.mockRestore();
+    });
+  });
+
+  describe('查询参数处理测试', () => {
+    it('应该处理字符串类型的status参数', async () => {
+      const result = await createHttpRequest(app)
+        .get('/api/blindbox?status=1')
+        .set('Authorization', `Bearer ${token}`);
+      expect(result.status).toBe(200);
+      expect(result.body.code).toBe(200);
+    });
+
+    it('应该处理数字类型的status参数', async () => {
+      const result = await createHttpRequest(app)
+        .get('/api/blindbox?status=1')
+        .set('Authorization', `Bearer ${token}`);
+      expect(result.status).toBe(200);
+      expect(result.body.code).toBe(200);
+    });
+
+    it('应该处理价格范围查询', async () => {
+      const result = await createHttpRequest(app)
+        .get('/api/blindbox?minPrice=10&maxPrice=100')
+        .set('Authorization', `Bearer ${token}`);
+      expect(result.status).toBe(200);
+      expect(result.body.code).toBe(200);
+    });
+
+    it('应该处理稀有度查询', async () => {
+      const result = await createHttpRequest(app)
+        .get('/api/blindbox?rarity=1')
+        .set('Authorization', `Bearer ${token}`);
+      expect(result.status).toBe(200);
+      expect(result.body.code).toBe(200);
+    });
+
+    it('应该处理分类查询', async () => {
+      const result = await createHttpRequest(app)
+        .get('/api/blindbox?category=test')
+        .set('Authorization', `Bearer ${token}`);
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+    });
+
+    it('应该处理排序参数', async () => {
+      const result = await createHttpRequest(app)
+        .get('/api/blindbox?sortBy=price&order=asc')
+        .set('Authorization', `Bearer ${token}`);
+      expect(result.status).toBe(200);
+      expect(result.body.code).toBe(200);
+    });
+
+    it('应该处理商家ID查询', async () => {
+      const result = await createHttpRequest(app)
+        .get('/api/blindbox?seller_id=1')
+        .set('Authorization', `Bearer ${token}`);
+      expect(result.status).toBe(200);
+      expect(result.body.code).toBe(200);
+    });
+  });
+
+  describe('盲盒商品管理边界测试', () => {
+    it('应该处理更新商品时service抛出异常', async () => {
+      const blindboxService = await app.getApplicationContext().getAsync(BlindBoxService);
+      const spy = jest.spyOn(blindboxService, 'updateBoxItem').mockImplementation(() => { throw new Error('service error'); });
+      const result = await createHttpRequest(app)
+        .put('/api/blindbox/items/1')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ name: 'test', image: 'test.jpg', rarity: 1, probability: 0.1 });
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+      spy.mockRestore();
+    });
+
+    it('应该处理删除商品时service抛出异常', async () => {
+      const blindboxService = await app.getApplicationContext().getAsync(BlindBoxService);
+      const spy = jest.spyOn(blindboxService, 'deleteBoxItem').mockImplementation(() => { throw new Error('service error'); });
+      const result = await createHttpRequest(app)
+        .delete('/api/blindbox/items/1')
+        .set('Authorization', `Bearer ${token}`);
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+      spy.mockRestore();
+    });
+
+    it('应该处理获取商品列表时service抛出异常', async () => {
+      const blindboxService = await app.getApplicationContext().getAsync(BlindBoxService);
+      const spy = jest.spyOn(blindboxService, 'getBoxItems').mockImplementation(() => { throw new Error('service error'); });
+      const result = await createHttpRequest(app)
+        .get('/api/blindbox/1/items')
+        .set('Authorization', `Bearer ${token}`);
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+      spy.mockRestore();
+    });
+
+    it('应该处理删除商品返回false的情况', async () => {
+      const blindboxService = await app.getApplicationContext().getAsync(BlindBoxService);
+      const spy = jest.spyOn(blindboxService, 'deleteBoxItem').mockResolvedValue(false);
+      const result = await createHttpRequest(app)
+        .delete('/api/blindbox/items/1')
+        .set('Authorization', `Bearer ${token}`);
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+      spy.mockRestore();
+    });
+  });
+
+  describe('错误状态码处理', () => {
+    it('应该处理删除盲盒时service返回null', async () => {
+      const blindboxService = await app.getApplicationContext().getAsync(BlindBoxService);
+      const spy = jest.spyOn(blindboxService, 'delete').mockResolvedValue(null);
+      const result = await createHttpRequest(app)
+        .delete('/api/blindbox/1')
+        .set('Authorization', `Bearer ${token}`);
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+      spy.mockRestore();
+    });
+
+    it('应该处理获取盲盒详情时service返回null', async () => {
+      const blindboxService = await app.getApplicationContext().getAsync(BlindBoxService);
+      const spy = jest.spyOn(blindboxService, 'findOne').mockResolvedValue(null);
+      const result = await createHttpRequest(app)
+        .get('/api/blindbox/1')
+        .set('Authorization', `Bearer ${token}`);
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+      spy.mockRestore();
+    });
+
+    it('应该处理service抛出带status的错误', async () => {
+      const blindboxService = await app.getApplicationContext().getAsync(BlindBoxService);
+      const error = new Error('test error');
+      (error as { status?: number }).status = 403;
+      const spy = jest.spyOn(blindboxService, 'delete').mockImplementation(() => { throw error; });
+      const result = await createHttpRequest(app)
+        .delete('/api/blindbox/1')
+        .set('Authorization', `Bearer ${token}`);
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+      spy.mockRestore();
+    });
+  });

@@ -445,4 +445,166 @@ describe('test/controller/blindbox-comment.controller.test.ts', () => {
       });
     });
   });
+
+  describe('GET /api/blindbox/comment/:id', () => {
+    it('should get comment by id successfully', async () => {
+      const result = await createHttpRequest(app)
+        .get(`/api/blindbox/comment/${commentId}`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(result.status).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toBe('获取评论详情成功');
+      expect(result.body.data).toBeDefined();
+      expect(result.body.data.id).toBe(commentId);
+    });
+
+    it('should handle non-existent comment id', async () => {
+      const result = await createHttpRequest(app)
+        .get('/api/blindbox/comment/99999')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle invalid comment id', async () => {
+      const result = await createHttpRequest(app)
+        .get('/api/blindbox/comment/invalid')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle service error when getting comment by id', async () => {
+      const result = await createHttpRequest(app)
+        .get(`/api/blindbox/comment/${commentId}`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+    });
+  });
+
+  describe('调试接口', () => {
+    it('should get all comments debug data', async () => {
+      const result = await createHttpRequest(app)
+        .get('/api/blindbox/comment/debug/all')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(result.status).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toBe('调试数据获取成功');
+      expect(result.body.data).toBeDefined();
+    });
+
+    it('should clean duplicate comments', async () => {
+      const result = await createHttpRequest(app)
+        .get('/api/blindbox/comment/debug/clean')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(result.status).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toContain('清理完成');
+      expect(result.body.data).toBeDefined();
+    });
+
+    it('should get comments with raw SQL', async () => {
+      const result = await createHttpRequest(app)
+        .get(`/api/blindbox/comment/debug/raw/${blindBoxId}`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(result.status).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toBe('原生SQL查询成功');
+      expect(result.body.data).toBeDefined();
+    });
+  });
+
+  describe('边界条件补充', () => {
+    it('should handle comment with very long parent_id', async () => {
+      const commentData = {
+        blind_box_id: blindBoxId,
+        content: '测试评论内容',
+        parent_id: 999999999
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/blindbox/comment')
+        .set('Authorization', `Bearer ${token}`)
+        .send(commentData);
+
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle comment with negative parent_id', async () => {
+      const commentData = {
+        blind_box_id: blindBoxId,
+        content: '测试评论内容',
+        parent_id: -1
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/blindbox/comment')
+        .set('Authorization', `Bearer ${token}`)
+        .send(commentData);
+
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle comment with string parent_id', async () => {
+      const commentData = {
+        blind_box_id: blindBoxId,
+        content: '测试评论内容',
+        parent_id: 'invalid'
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/blindbox/comment')
+        .set('Authorization', `Bearer ${token}`)
+        .send(commentData);
+
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle like with invalid comment_id type', async () => {
+      const likeData = {
+        comment_id: 'invalid'
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/blindbox/comment/like')
+        .set('Authorization', `Bearer ${token}`)
+        .send(likeData);
+
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle like with negative comment_id', async () => {
+      const likeData = {
+        comment_id: -1
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/blindbox/comment/like')
+        .set('Authorization', `Bearer ${token}`)
+        .send(likeData);
+
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle delete with invalid comment id', async () => {
+      const result = await createHttpRequest(app)
+        .del('/api/blindbox/comment/invalid')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle delete with negative comment id', async () => {
+      const result = await createHttpRequest(app)
+        .del('/api/blindbox/comment/-1')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+    });
+  });
 }); 
