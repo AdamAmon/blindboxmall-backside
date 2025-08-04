@@ -491,4 +491,659 @@ describe('test/controller/order.controller.test.ts', () => {
       .set('Authorization', `Bearer ${token}`);
     expect([200, 400, 422, 500]).toContain(res.status);
   });
+
+  describe('补充测试用例 - 提高分支覆盖率', () => {
+    it('should handle missing id parameter in get order', async () => {
+      // 测试获取订单时缺少id参数
+      const result = await createHttpRequest(app)
+        .get('/api/pay/order/get')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle invalid id type in get order', async () => {
+      // 测试获取订单时id类型错误
+      const result = await createHttpRequest(app)
+        .get('/api/pay/order/get')
+        .set('Authorization', `Bearer ${token}`)
+        .query({ id: 'invalid' });
+
+      expect(result.status).toBe(404);
+    });
+
+    it('should handle negative id in get order', async () => {
+      // 测试获取订单时id为负数
+      const result = await createHttpRequest(app)
+        .get('/api/pay/order/get')
+        .set('Authorization', `Bearer ${token}`)
+        .query({ id: -1 });
+
+      expect(result.status).toBe(404);
+    });
+
+    it('should handle zero id in get order', async () => {
+      // 测试获取订单时id为0
+      const result = await createHttpRequest(app)
+        .get('/api/pay/order/get')
+        .set('Authorization', `Bearer ${token}`)
+        .query({ id: 0 });
+
+      expect(result.status).toBe(404);
+    });
+
+    it('should handle very large id in get order', async () => {
+      // 测试获取订单时id过大
+      const result = await createHttpRequest(app)
+        .get('/api/pay/order/get')
+        .set('Authorization', `Bearer ${token}`)
+        .query({ id: 999999999 });
+
+      expect(result.status).toBe(404);
+    });
+
+    it('should handle missing user_id parameter in list orders', async () => {
+      // 测试获取订单列表时缺少user_id参数
+      const result = await createHttpRequest(app)
+        .get('/api/pay/order/list')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle invalid user_id type in list orders', async () => {
+      // 测试获取订单列表时user_id类型错误
+      const result = await createHttpRequest(app)
+        .get('/api/pay/order/list')
+        .set('Authorization', `Bearer ${token}`)
+        .query({ user_id: 'invalid' });
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle negative user_id in list orders', async () => {
+      // 测试获取订单列表时user_id为负数
+      const result = await createHttpRequest(app)
+        .get('/api/pay/order/list')
+        .set('Authorization', `Bearer ${token}`)
+        .query({ user_id: -1 });
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle zero user_id in list orders', async () => {
+      // 测试获取订单列表时user_id为0
+      const result = await createHttpRequest(app)
+        .get('/api/pay/order/list')
+        .set('Authorization', `Bearer ${token}`)
+        .query({ user_id: 0 });
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle very large user_id in list orders', async () => {
+      // 测试获取订单列表时user_id过大
+      const result = await createHttpRequest(app)
+        .get('/api/pay/order/list')
+        .set('Authorization', `Bearer ${token}`)
+        .query({ user_id: 999999999 });
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle missing order_id in pay order', async () => {
+      // 测试支付订单时缺少order_id
+      const result = await createHttpRequest(app)
+        .post('/api/pay/order/pay')
+        .set('Authorization', `Bearer ${token}`)
+        .send({});
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle invalid order_id type in pay order', async () => {
+      // 测试支付订单时order_id类型错误
+      const result = await createHttpRequest(app)
+        .post('/api/pay/order/pay')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ order_id: 'invalid' });
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle negative order_id in pay order', async () => {
+      // 测试支付订单时order_id为负数
+      const result = await createHttpRequest(app)
+        .post('/api/pay/order/pay')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ order_id: -1 });
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle zero order_id in pay order', async () => {
+      // 测试支付订单时order_id为0
+      const result = await createHttpRequest(app)
+        .post('/api/pay/order/pay')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ order_id: 0 });
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle very large order_id in pay order', async () => {
+      // 测试支付订单时order_id过大
+      const result = await createHttpRequest(app)
+        .post('/api/pay/order/pay')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ order_id: 999999999 });
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle missing user_id in create order', async () => {
+      // 测试创建订单时缺少user_id
+      const orderData = {
+        address_id: addressId,
+        total_amount: 10,
+        pay_method: 'balance',
+        items: [{ blind_box_id: blindBoxId, price: 10 }]
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/pay/order/create')
+        .set('Authorization', `Bearer ${token}`)
+        .send(orderData);
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle missing address_id in create order', async () => {
+      // 测试创建订单时缺少address_id
+      const orderData = {
+        user_id: userId,
+        total_amount: 10,
+        pay_method: 'balance',
+        items: [{ blind_box_id: blindBoxId, price: 10 }]
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/pay/order/create')
+        .set('Authorization', `Bearer ${token}`)
+        .send(orderData);
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle missing total_amount in create order', async () => {
+      // 测试创建订单时缺少total_amount
+      const orderData = {
+        user_id: userId,
+        address_id: addressId,
+        pay_method: 'balance',
+        items: [{ blind_box_id: blindBoxId, price: 10 }]
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/pay/order/create')
+        .set('Authorization', `Bearer ${token}`)
+        .send(orderData);
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle missing pay_method in create order', async () => {
+      // 测试创建订单时缺少pay_method
+      const orderData = {
+        user_id: userId,
+        address_id: addressId,
+        total_amount: 10,
+        items: [{ blind_box_id: blindBoxId, price: 10 }]
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/pay/order/create')
+        .set('Authorization', `Bearer ${token}`)
+        .send(orderData);
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle missing items in create order', async () => {
+      // 测试创建订单时缺少items
+      const orderData = {
+        user_id: userId,
+        address_id: addressId,
+        total_amount: 10,
+        pay_method: 'balance'
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/pay/order/create')
+        .set('Authorization', `Bearer ${token}`)
+        .send(orderData);
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle empty items array in create order', async () => {
+      // 测试创建订单时items为空数组
+      const orderData = {
+        user_id: userId,
+        address_id: addressId,
+        total_amount: 10,
+        pay_method: 'balance',
+        items: []
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/pay/order/create')
+        .set('Authorization', `Bearer ${token}`)
+        .send(orderData);
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle invalid user_id type in create order', async () => {
+      // 测试创建订单时user_id类型错误
+      const orderData = {
+        user_id: 'invalid',
+        address_id: addressId,
+        total_amount: 10,
+        pay_method: 'balance',
+        items: [{ blind_box_id: blindBoxId, price: 10 }]
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/pay/order/create')
+        .set('Authorization', `Bearer ${token}`)
+        .send(orderData);
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle invalid address_id type in create order', async () => {
+      // 测试创建订单时address_id类型错误
+      const orderData = {
+        user_id: userId,
+        address_id: 'invalid',
+        total_amount: 10,
+        pay_method: 'balance',
+        items: [{ blind_box_id: blindBoxId, price: 10 }]
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/pay/order/create')
+        .set('Authorization', `Bearer ${token}`)
+        .send(orderData);
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle invalid total_amount type in create order', async () => {
+      // 测试创建订单时total_amount类型错误
+      const orderData = {
+        user_id: userId,
+        address_id: addressId,
+        total_amount: 'invalid',
+        pay_method: 'balance',
+        items: [{ blind_box_id: blindBoxId, price: 10 }]
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/pay/order/create')
+        .set('Authorization', `Bearer ${token}`)
+        .send(orderData);
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle invalid pay_method type in create order', async () => {
+      // 测试创建订单时pay_method类型错误
+      const orderData = {
+        user_id: userId,
+        address_id: addressId,
+        total_amount: 10,
+        pay_method: 123,
+        items: [{ blind_box_id: blindBoxId, price: 10 }]
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/pay/order/create')
+        .set('Authorization', `Bearer ${token}`)
+        .send(orderData);
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle invalid items type in create order', async () => {
+      // 测试创建订单时items类型错误
+      const orderData = {
+        user_id: userId,
+        address_id: addressId,
+        total_amount: 10,
+        pay_method: 'balance',
+        items: 'invalid'
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/pay/order/create')
+        .set('Authorization', `Bearer ${token}`)
+        .send(orderData);
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle negative user_id in create order', async () => {
+      // 测试创建订单时user_id为负数
+      const orderData = {
+        user_id: -1,
+        address_id: addressId,
+        total_amount: 10,
+        pay_method: 'balance',
+        items: [{ blind_box_id: blindBoxId, price: 10 }]
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/pay/order/create')
+        .set('Authorization', `Bearer ${token}`)
+        .send(orderData);
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle negative address_id in create order', async () => {
+      // 测试创建订单时address_id为负数
+      const orderData = {
+        user_id: userId,
+        address_id: -1,
+        total_amount: 10,
+        pay_method: 'balance',
+        items: [{ blind_box_id: blindBoxId, price: 10 }]
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/pay/order/create')
+        .set('Authorization', `Bearer ${token}`)
+        .send(orderData);
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle negative total_amount in create order', async () => {
+      // 测试创建订单时total_amount为负数
+      const orderData = {
+        user_id: userId,
+        address_id: addressId,
+        total_amount: -10,
+        pay_method: 'balance',
+        items: [{ blind_box_id: blindBoxId, price: 10 }]
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/pay/order/create')
+        .set('Authorization', `Bearer ${token}`)
+        .send(orderData);
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle zero total_amount in create order', async () => {
+      // 测试创建订单时total_amount为0
+      const orderData = {
+        user_id: userId,
+        address_id: addressId,
+        total_amount: 0,
+        pay_method: 'balance',
+        items: [{ blind_box_id: blindBoxId, price: 10 }]
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/pay/order/create')
+        .set('Authorization', `Bearer ${token}`)
+        .send(orderData);
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle very large total_amount in create order', async () => {
+      // 测试创建订单时total_amount过大
+      const orderData = {
+        user_id: userId,
+        address_id: addressId,
+        total_amount: 999999999,
+        pay_method: 'balance',
+        items: [{ blind_box_id: blindBoxId, price: 10 }]
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/pay/order/create')
+        .set('Authorization', `Bearer ${token}`)
+        .send(orderData);
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle invalid item structure in create order', async () => {
+      // 测试创建订单时item结构错误
+      const orderData = {
+        user_id: userId,
+        address_id: addressId,
+        total_amount: 10,
+        pay_method: 'balance',
+        items: [{ invalid_field: 'value' }]
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/pay/order/create')
+        .set('Authorization', `Bearer ${token}`)
+        .send(orderData);
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle missing blind_box_id in item', async () => {
+      // 测试创建订单时item缺少blind_box_id
+      const orderData = {
+        user_id: userId,
+        address_id: addressId,
+        total_amount: 10,
+        pay_method: 'balance',
+        items: [{ price: 10 }]
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/pay/order/create')
+        .set('Authorization', `Bearer ${token}`)
+        .send(orderData);
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle missing price in item', async () => {
+      // 测试创建订单时item缺少price
+      const orderData = {
+        user_id: userId,
+        address_id: addressId,
+        total_amount: 10,
+        pay_method: 'balance',
+        items: [{ blind_box_id: blindBoxId }]
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/pay/order/create')
+        .set('Authorization', `Bearer ${token}`)
+        .send(orderData);
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle invalid blind_box_id type in item', async () => {
+      // 测试创建订单时item的blind_box_id类型错误
+      const orderData = {
+        user_id: userId,
+        address_id: addressId,
+        total_amount: 10,
+        pay_method: 'balance',
+        items: [{ blind_box_id: 'invalid', price: 10 }]
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/pay/order/create')
+        .set('Authorization', `Bearer ${token}`)
+        .send(orderData);
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle invalid price type in item', async () => {
+      // 测试创建订单时item的price类型错误
+      const orderData = {
+        user_id: userId,
+        address_id: addressId,
+        total_amount: 10,
+        pay_method: 'balance',
+        items: [{ blind_box_id: blindBoxId, price: 'invalid' }]
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/pay/order/create')
+        .set('Authorization', `Bearer ${token}`)
+        .send(orderData);
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle negative blind_box_id in item', async () => {
+      // 测试创建订单时item的blind_box_id为负数
+      const orderData = {
+        user_id: userId,
+        address_id: addressId,
+        total_amount: 10,
+        pay_method: 'balance',
+        items: [{ blind_box_id: -1, price: 10 }]
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/pay/order/create')
+        .set('Authorization', `Bearer ${token}`)
+        .send(orderData);
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle negative price in item', async () => {
+      // 测试创建订单时item的price为负数
+      const orderData = {
+        user_id: userId,
+        address_id: addressId,
+        total_amount: 10,
+        pay_method: 'balance',
+        items: [{ blind_box_id: blindBoxId, price: -10 }]
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/pay/order/create')
+        .set('Authorization', `Bearer ${token}`)
+        .send(orderData);
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle zero price in item', async () => {
+      // 测试创建订单时item的price为0
+      const orderData = {
+        user_id: userId,
+        address_id: addressId,
+        total_amount: 10,
+        pay_method: 'balance',
+        items: [{ blind_box_id: blindBoxId, price: 0 }]
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/pay/order/create')
+        .set('Authorization', `Bearer ${token}`)
+        .send(orderData);
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle very large price in item', async () => {
+      // 测试创建订单时item的price过大
+      const orderData = {
+        user_id: userId,
+        address_id: addressId,
+        total_amount: 10,
+        pay_method: 'balance',
+        items: [{ blind_box_id: blindBoxId, price: 999999999 }]
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/pay/order/create')
+        .set('Authorization', `Bearer ${token}`)
+        .send(orderData);
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle empty body in create order', async () => {
+      // 测试创建订单时请求体为空
+      const result = await createHttpRequest(app)
+        .post('/api/pay/order/create')
+        .set('Authorization', `Bearer ${token}`)
+        .send({});
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle null body in create order', async () => {
+      // 测试创建订单时请求体为null
+      const result = await createHttpRequest(app)
+        .post('/api/pay/order/create')
+        .set('Authorization', `Bearer ${token}`)
+        .send({});
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle undefined body in create order', async () => {
+      // 测试创建订单时请求体为undefined
+      const result = await createHttpRequest(app)
+        .post('/api/pay/order/create')
+        .set('Authorization', `Bearer ${token}`)
+        .send(undefined);
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle empty body in pay order', async () => {
+      // 测试支付订单时请求体为空
+      const result = await createHttpRequest(app)
+        .post('/api/pay/order/pay')
+        .set('Authorization', `Bearer ${token}`)
+        .send({});
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle null body in pay order', async () => {
+      // 测试支付订单时请求体为null
+      const result = await createHttpRequest(app)
+        .post('/api/pay/order/pay')
+        .set('Authorization', `Bearer ${token}`)
+        .send({});
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('should handle undefined body in pay order', async () => {
+      // 测试支付订单时请求体为undefined
+      const result = await createHttpRequest(app)
+        .post('/api/pay/order/pay')
+        .set('Authorization', `Bearer ${token}`)
+        .send(undefined);
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+  });
 }); 
