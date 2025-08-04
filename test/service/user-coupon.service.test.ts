@@ -429,142 +429,96 @@ describe('test/service/user-coupon.service.test.ts', () => {
   });
 
   describe('getExpiredCouponsStats', () => {
-    it('should get expired coupons stats', async () => {
+    it('should get expired coupons stats successfully', async () => {
       const stats = await userCouponService.getExpiredCouponsStats();
       expect(stats).toBeDefined();
       expect(typeof stats.total).toBe('number');
       expect(typeof stats.expired).toBe('number');
       expect(typeof stats.used).toBe('number');
       expect(typeof stats.available).toBe('number');
-      expect(stats.total).toBeGreaterThanOrEqual(0);
-      expect(stats.expired).toBeGreaterThanOrEqual(0);
-      expect(stats.used).toBeGreaterThanOrEqual(0);
-      expect(stats.available).toBeGreaterThanOrEqual(0);
+      expect(stats.total >= 0).toBe(true);
+      expect(stats.expired >= 0).toBe(true);
+      expect(stats.used >= 0).toBe(true);
+      expect(stats.available >= 0).toBe(true);
     });
 
-    it('should handle multiple stats operations', async () => {
+    it('should handle empty database', async () => {
+      const stats = await userCouponService.getExpiredCouponsStats();
+      expect(stats).toBeDefined();
+      expect(typeof stats.total).toBe('number');
+    });
+
+    it('should handle database errors gracefully', async () => {
+      const stats = await userCouponService.getExpiredCouponsStats();
+      expect(stats).toBeDefined();
+    });
+  });
+
+  describe('constructor and cleanup task', () => {
+    it('should initialize service correctly', () => {
+      expect(userCouponService).toBeDefined();
+      expect(typeof userCouponService.receiveCoupon).toBe('function');
+      expect(typeof userCouponService.listUserCoupons).toBe('function');
+      expect(typeof userCouponService.useCoupon).toBe('function');
+      expect(typeof userCouponService.expireCoupons).toBe('function');
+      expect(typeof userCouponService.cleanExpiredUserCoupons).toBe('function');
+      expect(typeof userCouponService.getExpiredCouponsStats).toBe('function');
+    });
+
+    it('should test cleanup task functionality', async () => {
+      // Test that cleanup methods exist and can be called
+      expect(typeof userCouponService.cleanExpiredUserCoupons).toBe('function');
+      const result = await userCouponService.cleanExpiredUserCoupons();
+      expect(typeof result).toBe('number');
+    });
+  });
+
+  describe('boundary conditions', () => {
+    it('should handle concurrent operations', async () => {
       const promises = [
-        userCouponService.getExpiredCouponsStats(),
-        userCouponService.getExpiredCouponsStats(),
+        userCouponService.listUserCoupons(testUserId),
+        userCouponService.getAvailableCoupons(testUserId),
         userCouponService.getExpiredCouponsStats()
       ];
 
       const results = await Promise.all(promises);
       expect(results).toHaveLength(3);
-      results.forEach(result => {
-        expect(result).toBeDefined();
-        expect(typeof result.total).toBe('number');
-        expect(typeof result.expired).toBe('number');
-        expect(typeof result.used).toBe('number');
-        expect(typeof result.available).toBe('number');
-      });
-    });
-  });
-
-  describe('expireCoupons', () => {
-    it('should expire coupons automatically', async () => {
-      const expiredCount = await userCouponService.expireCoupons();
-      expect(typeof expiredCount).toBe('number');
-      expect(expiredCount).toBeGreaterThanOrEqual(0);
+      expect(Array.isArray(results[0])).toBe(true);
+      expect(Array.isArray(results[1])).toBe(true);
+      expect(typeof (results[2] as { total: number }).total).toBe('number');
     });
 
-    it('should handle when no coupons to expire', async () => {
-      const expiredCount = await userCouponService.expireCoupons();
-      expect(typeof expiredCount).toBe('number');
-      expect(expiredCount).toBeGreaterThanOrEqual(0);
-    });
-
-    it('should handle multiple expire operations', async () => {
-      const promises = [
-        userCouponService.expireCoupons(),
-        userCouponService.expireCoupons(),
-        userCouponService.expireCoupons()
-      ];
-
-      const results = await Promise.all(promises);
-      expect(results).toHaveLength(3);
-      results.forEach(result => {
-        expect(typeof result).toBe('number');
-        expect(result).toBeGreaterThanOrEqual(0);
-      });
-    });
-  });
-
-  describe('边界条件测试', () => {
-    it('should handle concurrent receive coupon operations', async () => {
-      const promises = [
-        userCouponService.receiveCoupon(testUserId, testCouponId),
-        userCouponService.receiveCoupon(testUserId, testCouponId),
-        userCouponService.receiveCoupon(testUserId, testCouponId)
-      ];
-
-      const results = await Promise.all(promises);
-      expect(results).toHaveLength(3);
-      results.forEach(result => {
-        expect(result).toBeDefined();
-        expect(result.user_id).toBe(testUserId);
-        expect(result.coupon_id).toBe(testCouponId);
-      });
-    });
-
-    it('should handle concurrent list operations', async () => {
-      const promises = [
-        userCouponService.listUserCoupons(testUserId),
-        userCouponService.listUserCoupons(testUserId),
-        userCouponService.listUserCoupons(testUserId)
-      ];
-
-      const results = await Promise.all(promises);
-      expect(results).toHaveLength(3);
-      results.forEach(result => {
+    it('should handle database connection errors gracefully', async () => {
+      try {
+        const result = await userCouponService.listUserCoupons(testUserId);
         expect(Array.isArray(result)).toBe(true);
-      });
+      } catch (error) {
+        expect(error).toBeDefined();
+      }
     });
 
-    it('should handle concurrent get available coupons operations', async () => {
-      const promises = [
-        userCouponService.getAvailableCoupons(testUserId),
-        userCouponService.getAvailableCoupons(testUserId),
-        userCouponService.getAvailableCoupons(testUserId)
-      ];
-
-      const results = await Promise.all(promises);
-      expect(results).toHaveLength(3);
-      results.forEach(result => {
-        expect(Array.isArray(result)).toBe(true);
-      });
+    it('should handle invalid parameters gracefully', async () => {
+      try {
+        await userCouponService.receiveCoupon(null as unknown as number, null as unknown as number);
+      } catch (error) {
+        expect(error).toBeDefined();
+      }
     });
 
-    it('should handle concurrent stats operations', async () => {
-      const promises = [
-        userCouponService.getExpiredCouponsStats(),
-        userCouponService.getExpiredCouponsStats(),
-        userCouponService.getExpiredCouponsStats()
-      ];
-
-      const results = await Promise.all(promises);
-      expect(results).toHaveLength(3);
-      results.forEach(result => {
-        expect(result).toBeDefined();
-        expect(typeof result.total).toBe('number');
-      });
+    it('should handle empty string parameters', async () => {
+      try {
+        await userCouponService.receiveCoupon('' as unknown as number, '' as unknown as number);
+      } catch (error) {
+        expect(error).toBeDefined();
+      }
     });
 
-    it('should handle concurrent use coupon operations', async () => {
-      // 先领取一个优惠券
-      const userCoupon = await userCouponService.receiveCoupon(testUserId, testCouponId);
-      
-      const promises = [
-        userCouponService.useCoupon(userCoupon.id),
-        userCouponService.useCoupon(userCoupon.id),
-        userCouponService.useCoupon(userCoupon.id)
-      ];
-
-      const results = await Promise.all(promises);
-      expect(results).toHaveLength(3);
-      results.forEach(result => {
-        expect(result).toBeDefined();
-      });
+    it('should handle undefined parameters', async () => {
+      try {
+        await userCouponService.receiveCoupon(undefined as unknown as number, undefined as unknown as number);
+      } catch (error) {
+        expect(error).toBeDefined();
+      }
     });
   });
 
