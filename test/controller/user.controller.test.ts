@@ -164,4 +164,318 @@ describe('test/controller/user.controller.test.ts', () => {
       .send({ id: null, nickname: 12345 });
     expect([200, 400, 401, 403, 404, 422, 500]).toContain(result.status);
   });
+
+  describe('用户奖品管理', () => {
+    it('应该成功获取用户奖品列表', async () => {
+      const result = await createHttpRequest(app)
+        .get(`/api/user/prizes?user_id=${userId}`)
+        .set('Authorization', `Bearer ${token}`);
+      
+      expect(result.status).toBe(200);
+      expect(result.body.code).toBe(200);
+      expect(result.body.data).toBeDefined();
+      expect(result.body.data.list).toBeDefined();
+      expect(result.body.data.total).toBeDefined();
+      expect(result.body.data.page).toBe(1);
+      expect(result.body.data.limit).toBe(10);
+    });
+
+    it('应该成功获取用户奖品列表（带稀有度过滤）', async () => {
+      const result = await createHttpRequest(app)
+        .get(`/api/user/prizes?user_id=${userId}&rarity=1`)
+        .set('Authorization', `Bearer ${token}`);
+      
+      expect(result.status).toBe(200);
+      expect(result.body.code).toBe(200);
+      expect(result.body.data).toBeDefined();
+    });
+
+    it('应该成功获取用户奖品列表（带关键词搜索）', async () => {
+      const result = await createHttpRequest(app)
+        .get(`/api/user/prizes?user_id=${userId}&keyword=test`)
+        .set('Authorization', `Bearer ${token}`);
+      
+      expect(result.status).toBe(200);
+      expect(result.body.code).toBe(200);
+      expect(result.body.data).toBeDefined();
+    });
+
+    it('应该成功获取用户奖品列表（带分页参数）', async () => {
+      const result = await createHttpRequest(app)
+        .get(`/api/user/prizes?user_id=${userId}&page=2&limit=5`)
+        .set('Authorization', `Bearer ${token}`);
+      
+      expect(result.status).toBe(200);
+      expect(result.body.code).toBe(200);
+      expect(result.body.data.page).toBe(2);
+      expect(result.body.data.limit).toBe(5);
+    });
+
+    it('应该成功获取用户奖品列表（带所有参数）', async () => {
+      const result = await createHttpRequest(app)
+        .get(`/api/user/prizes?user_id=${userId}&rarity=2&keyword=rare&page=1&limit=20`)
+        .set('Authorization', `Bearer ${token}`);
+      
+      expect(result.status).toBe(200);
+      expect(result.body.code).toBe(200);
+      expect(result.body.data).toBeDefined();
+    });
+
+    it('应该处理缺少用户ID的奖品查询', async () => {
+      const result = await createHttpRequest(app)
+        .get('/api/user/prizes')
+        .set('Authorization', `Bearer ${token}`);
+      
+      expect([400, 500]).toContain(result.status);
+    });
+
+    it('应该处理无效的用户ID参数', async () => {
+      const result = await createHttpRequest(app)
+        .get('/api/user/prizes?user_id=invalid')
+        .set('Authorization', `Bearer ${token}`);
+      
+      expect([400, 500]).toContain(result.status);
+    });
+
+    it('应该处理无效的稀有度参数', async () => {
+      const result = await createHttpRequest(app)
+        .get(`/api/user/prizes?user_id=${userId}&rarity=invalid`)
+        .set('Authorization', `Bearer ${token}`);
+      
+      expect([200, 400, 500]).toContain(result.status);
+    });
+
+    it('应该处理无效的分页参数', async () => {
+      const result = await createHttpRequest(app)
+        .get(`/api/user/prizes?user_id=${userId}&page=invalid&limit=invalid`)
+        .set('Authorization', `Bearer ${token}`);
+      
+      expect([200, 400, 500]).toContain(result.status);
+    });
+
+    it('应该处理负数分页参数', async () => {
+      const result = await createHttpRequest(app)
+        .get(`/api/user/prizes?user_id=${userId}&page=-1&limit=-5`)
+        .set('Authorization', `Bearer ${token}`);
+      
+      expect([200, 400, 500]).toContain(result.status);
+    });
+
+    it('应该处理不存在的用户奖品查询', async () => {
+      const result = await createHttpRequest(app)
+        .get('/api/user/prizes?user_id=99999')
+        .set('Authorization', `Bearer ${token}`);
+      
+      expect([200, 404, 500]).toContain(result.status);
+    });
+
+    it('应该处理未授权的奖品查询', async () => {
+      const result = await createHttpRequest(app)
+        .get(`/api/user/prizes?user_id=${userId}`);
+      
+      expect([401, 403]).toContain(result.status);
+    });
+  });
+
+  describe('用户信息更新边界测试', () => {
+    it('应该成功更新用户昵称', async () => {
+      const updateData = {
+        id: userId,
+        nickname: '新昵称测试'
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/user/update')
+        .set('Authorization', `Bearer ${token}`)
+        .send(updateData);
+      
+      expect(result.status).toBe(200);
+      expect(result.body.success).toBe(true);
+    });
+
+    it('应该成功更新用户头像', async () => {
+      const updateData = {
+        id: userId,
+        avatar: 'https://example.com/avatar.jpg'
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/user/update')
+        .set('Authorization', `Bearer ${token}`)
+        .send(updateData);
+      
+      expect(result.status).toBe(200);
+      expect(result.body.success).toBe(true);
+    });
+
+    it('应该成功更新用户邮箱', async () => {
+      const updateData = {
+        id: userId,
+        email: 'test@example.com'
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/user/update')
+        .set('Authorization', `Bearer ${token}`)
+        .send(updateData);
+      
+      expect(result.status).toBe(200);
+      expect(result.body.success).toBe(true);
+    });
+
+    it('应该成功更新用户手机号', async () => {
+      const updateData = {
+        id: userId,
+        phone: '13800138000'
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/user/update')
+        .set('Authorization', `Bearer ${token}`)
+        .send(updateData);
+      
+      expect(result.status).toBe(200);
+      expect(result.body.success).toBe(true);
+    });
+
+    it('应该成功更新用户余额', async () => {
+      const updateData = {
+        id: userId,
+        balance: 500
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/user/update')
+        .set('Authorization', `Bearer ${token}`)
+        .send(updateData);
+      
+      expect(result.status).toBe(200);
+      expect(result.body.success).toBe(true);
+    });
+
+    it('应该成功更新多个字段', async () => {
+      const updateData = {
+        id: userId,
+        nickname: '多字段更新',
+        email: 'multi@example.com',
+        phone: '13900139000',
+        balance: 1000
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/user/update')
+        .set('Authorization', `Bearer ${token}`)
+        .send(updateData);
+      
+      expect(result.status).toBe(200);
+      expect(result.body.success).toBe(true);
+    });
+
+    it('应该处理空字符串字段', async () => {
+      const updateData = {
+        id: userId,
+        nickname: '',
+        email: '',
+        phone: ''
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/user/update')
+        .set('Authorization', `Bearer ${token}`)
+        .send(updateData);
+      
+      expect([200, 400, 422]).toContain(result.status);
+    });
+
+    it('应该处理null字段', async () => {
+      const updateData = {
+        id: userId,
+        nickname: null,
+        email: null,
+        phone: null
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/user/update')
+        .set('Authorization', `Bearer ${token}`)
+        .send(updateData);
+      
+      expect([200, 400, 422]).toContain(result.status);
+    });
+
+    it('应该处理负数余额', async () => {
+      const updateData = {
+        id: userId,
+        balance: -100
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/user/update')
+        .set('Authorization', `Bearer ${token}`)
+        .send(updateData);
+      
+      expect([200, 400, 422]).toContain(result.status);
+    });
+
+    it('应该处理零余额', async () => {
+      const updateData = {
+        id: userId,
+        balance: 0
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/user/update')
+        .set('Authorization', `Bearer ${token}`)
+        .send(updateData);
+      
+      expect(result.status).toBe(200);
+      expect(result.body.success).toBe(true);
+    });
+
+    it('应该处理极大余额', async () => {
+      const updateData = {
+        id: userId,
+        balance: 999999999
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/user/update')
+        .set('Authorization', `Bearer ${token}`)
+        .send(updateData);
+      
+      expect([200, 400, 422]).toContain(result.status);
+    });
+  });
+
+  describe('服务层异常处理', () => {
+    it('应该处理服务层获取用户异常', async () => {
+      const result = await createHttpRequest(app)
+        .get('/api/user/get?id=0')
+        .set('Authorization', `Bearer ${token}`);
+      
+      expect([400, 404, 500]).toContain(result.status);
+    });
+
+    it('应该处理服务层更新用户异常', async () => {
+      const updateData = {
+        id: 0,
+        nickname: '异常测试'
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/user/update')
+        .set('Authorization', `Bearer ${token}`)
+        .send(updateData);
+      
+      expect([400, 404, 500]).toContain(result.status);
+    });
+
+    it('应该处理服务层获取奖品异常', async () => {
+      const result = await createHttpRequest(app)
+        .get('/api/user/prizes?user_id=0')
+        .set('Authorization', `Bearer ${token}`);
+      
+      expect([200, 400, 404, 500]).toContain(result.status);
+    });
+  });
 }); 

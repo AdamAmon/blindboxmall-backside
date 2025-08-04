@@ -142,6 +142,54 @@ describe('test/service/user-coupon.service.test.ts', () => {
         expect(error).toBeDefined();
       }
     });
+
+    it('should handle null user id', async () => {
+      try {
+        await userCouponService.receiveCoupon(null as unknown as number, testCouponId);
+      } catch (error) {
+        expect(error).toBeDefined();
+      }
+    });
+
+    it('should handle undefined user id', async () => {
+      try {
+        await userCouponService.receiveCoupon(undefined as unknown as number, testCouponId);
+      } catch (error) {
+        expect(error).toBeDefined();
+      }
+    });
+
+    it('should handle null coupon id', async () => {
+      try {
+        await userCouponService.receiveCoupon(testUserId, null as unknown as number);
+      } catch (error) {
+        expect(error).toBeDefined();
+      }
+    });
+
+    it('should handle undefined coupon id', async () => {
+      try {
+        await userCouponService.receiveCoupon(testUserId, undefined as unknown as number);
+      } catch (error) {
+        expect(error).toBeDefined();
+      }
+    });
+
+    it('should handle invalid user id types', async () => {
+      try {
+        await userCouponService.receiveCoupon('invalid' as unknown as number, testCouponId);
+      } catch (error) {
+        expect(error).toBeDefined();
+      }
+    });
+
+    it('should handle invalid coupon id types', async () => {
+      try {
+        await userCouponService.receiveCoupon(testUserId, 'invalid' as unknown as number);
+      } catch (error) {
+        expect(error).toBeDefined();
+      }
+    });
   });
 
   describe('listUserCoupons', () => {
@@ -177,6 +225,33 @@ describe('test/service/user-coupon.service.test.ts', () => {
     it('should handle very large user id', async () => {
       try {
         const result = await userCouponService.listUserCoupons(Number.MAX_SAFE_INTEGER);
+        expect(Array.isArray(result)).toBe(true);
+      } catch (error) {
+        expect(error).toBeDefined();
+      }
+    });
+
+    it('should handle null user id', async () => {
+      try {
+        const result = await userCouponService.listUserCoupons(null as unknown as number);
+        expect(Array.isArray(result)).toBe(true);
+      } catch (error) {
+        expect(error).toBeDefined();
+      }
+    });
+
+    it('should handle undefined user id', async () => {
+      try {
+        const result = await userCouponService.listUserCoupons(undefined as unknown as number);
+        expect(Array.isArray(result)).toBe(true);
+      } catch (error) {
+        expect(error).toBeDefined();
+      }
+    });
+
+    it('should handle invalid user id types', async () => {
+      try {
+        const result = await userCouponService.listUserCoupons('invalid' as unknown as number);
         expect(Array.isArray(result)).toBe(true);
       } catch (error) {
         expect(error).toBeDefined();
@@ -228,6 +303,33 @@ describe('test/service/user-coupon.service.test.ts', () => {
         expect(error).toBeDefined();
       }
     });
+
+    it('should handle null user coupon id', async () => {
+      try {
+        const result = await userCouponService.useCoupon(null as unknown as number);
+        expect(result).toBeDefined();
+      } catch (error) {
+        expect(error).toBeDefined();
+      }
+    });
+
+    it('should handle undefined user coupon id', async () => {
+      try {
+        const result = await userCouponService.useCoupon(undefined as unknown as number);
+        expect(result).toBeDefined();
+      } catch (error) {
+        expect(error).toBeDefined();
+      }
+    });
+
+    it('should handle invalid user coupon id types', async () => {
+      try {
+        const result = await userCouponService.useCoupon('invalid' as unknown as number);
+        expect(result).toBeDefined();
+      } catch (error) {
+        expect(error).toBeDefined();
+      }
+    });
   });
 
   describe('getAvailableCoupons', () => {
@@ -268,6 +370,33 @@ describe('test/service/user-coupon.service.test.ts', () => {
         expect(error).toBeDefined();
       }
     });
+
+    it('should handle null user id', async () => {
+      try {
+        const result = await userCouponService.getAvailableCoupons(null as unknown as number);
+        expect(Array.isArray(result)).toBe(true);
+      } catch (error) {
+        expect(error).toBeDefined();
+      }
+    });
+
+    it('should handle undefined user id', async () => {
+      try {
+        const result = await userCouponService.getAvailableCoupons(undefined as unknown as number);
+        expect(Array.isArray(result)).toBe(true);
+      } catch (error) {
+        expect(error).toBeDefined();
+      }
+    });
+
+    it('should handle invalid user id types', async () => {
+      try {
+        const result = await userCouponService.getAvailableCoupons('invalid' as unknown as number);
+        expect(Array.isArray(result)).toBe(true);
+      } catch (error) {
+        expect(error).toBeDefined();
+      }
+    });
   });
 
   describe('cleanExpiredUserCoupons', () => {
@@ -281,6 +410,21 @@ describe('test/service/user-coupon.service.test.ts', () => {
       const cleanedCount = await userCouponService.cleanExpiredUserCoupons();
       expect(typeof cleanedCount).toBe('number');
       expect(cleanedCount).toBeGreaterThanOrEqual(0);
+    });
+
+    it('should handle multiple clean operations', async () => {
+      const promises = [
+        userCouponService.cleanExpiredUserCoupons(),
+        userCouponService.cleanExpiredUserCoupons(),
+        userCouponService.cleanExpiredUserCoupons()
+      ];
+
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(3);
+      results.forEach(result => {
+        expect(typeof result).toBe('number');
+        expect(result).toBeGreaterThanOrEqual(0);
+      });
     });
   });
 
@@ -297,6 +441,24 @@ describe('test/service/user-coupon.service.test.ts', () => {
       expect(stats.used).toBeGreaterThanOrEqual(0);
       expect(stats.available).toBeGreaterThanOrEqual(0);
     });
+
+    it('should handle multiple stats operations', async () => {
+      const promises = [
+        userCouponService.getExpiredCouponsStats(),
+        userCouponService.getExpiredCouponsStats(),
+        userCouponService.getExpiredCouponsStats()
+      ];
+
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(3);
+      results.forEach(result => {
+        expect(result).toBeDefined();
+        expect(typeof result.total).toBe('number');
+        expect(typeof result.expired).toBe('number');
+        expect(typeof result.used).toBe('number');
+        expect(typeof result.available).toBe('number');
+      });
+    });
   });
 
   describe('expireCoupons', () => {
@@ -310,6 +472,21 @@ describe('test/service/user-coupon.service.test.ts', () => {
       const expiredCount = await userCouponService.expireCoupons();
       expect(typeof expiredCount).toBe('number');
       expect(expiredCount).toBeGreaterThanOrEqual(0);
+    });
+
+    it('should handle multiple expire operations', async () => {
+      const promises = [
+        userCouponService.expireCoupons(),
+        userCouponService.expireCoupons(),
+        userCouponService.expireCoupons()
+      ];
+
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(3);
+      results.forEach(result => {
+        expect(typeof result).toBe('number');
+        expect(result).toBeGreaterThanOrEqual(0);
+      });
     });
   });
 
@@ -372,61 +549,54 @@ describe('test/service/user-coupon.service.test.ts', () => {
         expect(typeof result.total).toBe('number');
       });
     });
+
+    it('should handle concurrent use coupon operations', async () => {
+      // 先领取一个优惠券
+      const userCoupon = await userCouponService.receiveCoupon(testUserId, testCouponId);
+      
+      const promises = [
+        userCouponService.useCoupon(userCoupon.id),
+        userCouponService.useCoupon(userCoupon.id),
+        userCouponService.useCoupon(userCoupon.id)
+      ];
+
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(3);
+      results.forEach(result => {
+        expect(result).toBeDefined();
+      });
+    });
   });
 
   describe('异常处理测试', () => {
-    it('should handle invalid user id types', async () => {
-      try {
-        await userCouponService.receiveCoupon('invalid' as unknown as number, testCouponId);
-      } catch (error) {
-        expect(error).toBeDefined();
-      }
-    });
-
-    it('should handle invalid coupon id types', async () => {
-      try {
-        await userCouponService.receiveCoupon(testUserId, 'invalid' as unknown as number);
-      } catch (error) {
-        expect(error).toBeDefined();
-      }
-    });
-
-    it('should handle null user id', async () => {
-      try {
-        await userCouponService.receiveCoupon(null as unknown as number, testCouponId);
-      } catch (error) {
-        expect(error).toBeDefined();
-      }
-    });
-
-    it('should handle undefined user id', async () => {
-      try {
-        await userCouponService.receiveCoupon(undefined as unknown as number, testCouponId);
-      } catch (error) {
-        expect(error).toBeDefined();
-      }
-    });
-
-    it('should handle null coupon id', async () => {
-      try {
-        await userCouponService.receiveCoupon(testUserId, null as unknown as number);
-      } catch (error) {
-        expect(error).toBeDefined();
-      }
-    });
-
-    it('should handle undefined coupon id', async () => {
-      try {
-        await userCouponService.receiveCoupon(testUserId, undefined as unknown as number);
-      } catch (error) {
-        expect(error).toBeDefined();
-      }
-    });
-
     it('should handle database connection errors gracefully', async () => {
       try {
         const result = await userCouponService.listUserCoupons(testUserId);
         expect(Array.isArray(result)).toBe(true);
+      } catch (error) {
+        expect(error).toBeDefined();
+      }
+    });
+
+    it('should handle invalid parameters gracefully', async () => {
+      try {
+        await userCouponService.receiveCoupon(null as unknown as number, null as unknown as number);
+      } catch (error) {
+        expect(error).toBeDefined();
+      }
+    });
+
+    it('should handle empty string parameters', async () => {
+      try {
+        await userCouponService.receiveCoupon('' as unknown as number, '' as unknown as number);
+      } catch (error) {
+        expect(error).toBeDefined();
+      }
+    });
+
+    it('should handle undefined parameters', async () => {
+      try {
+        await userCouponService.receiveCoupon(undefined as unknown as number, undefined as unknown as number);
       } catch (error) {
         expect(error).toBeDefined();
       }

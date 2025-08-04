@@ -117,6 +117,17 @@ describe('test/service/player-show.service.test.ts', () => {
         expect(error).toBeDefined();
       }
     });
+
+    it('should handle negative pageSize', async () => {
+      const params = {
+        page: 1,
+        pageSize: -5
+      };
+
+      const result = await playerShowService.getShowList(params);
+      expect(result).toBeDefined();
+      expect(result.pageSize).toBe(-5);
+    });
   });
 
   describe('getShowDetail', () => {
@@ -220,6 +231,14 @@ describe('test/service/player-show.service.test.ts', () => {
         expect(error).toBeDefined();
       }
     });
+
+    it('should handle tree building with no comments', async () => {
+      const showId = 99999;
+      const result = await playerShowService.getComments(showId);
+      expect(result).toBeDefined();
+      expect(Array.isArray(result)).toBe(true);
+      expect(result.length).toBe(0);
+    });
   });
 
   describe('likeComment', () => {
@@ -250,6 +269,30 @@ describe('test/service/player-show.service.test.ts', () => {
     it('should handle like comment with very large comment id', async () => {
       const commentId = Number.MAX_SAFE_INTEGER;
       const userId = 1;
+
+      await expect(playerShowService.likeComment(commentId, userId))
+        .rejects.toThrow('评论不存在');
+    });
+
+    it('should handle zero user id', async () => {
+      const commentId = 1;
+      const userId = 0;
+
+      await expect(playerShowService.likeComment(commentId, userId))
+        .rejects.toThrow('评论不存在');
+    });
+
+    it('should handle negative user id', async () => {
+      const commentId = 1;
+      const userId = -1;
+
+      await expect(playerShowService.likeComment(commentId, userId))
+        .rejects.toThrow('评论不存在');
+    });
+
+    it('should handle very large user id', async () => {
+      const commentId = 1;
+      const userId = Number.MAX_SAFE_INTEGER;
 
       await expect(playerShowService.likeComment(commentId, userId))
         .rejects.toThrow('评论不存在');

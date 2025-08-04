@@ -133,4 +133,433 @@ describe('test/service/coupon.service.test.ts', () => {
     const result = await couponService.listCoupons(1, 10, 'invalid');
     expect(result.data.length).toBeGreaterThanOrEqual(0);
   });
+
+  describe('边界条件测试', () => {
+    it('should handle list coupons with default parameters', async () => {
+      const result = await couponService.listCoupons();
+      expect(result).toBeDefined();
+      expect(result.page).toBe(1);
+      expect(result.pageSize).toBe(10);
+    });
+
+    it('should handle list coupons with zero page', async () => {
+      const result = await couponService.listCoupons(0, 10, 'valid');
+      expect(result).toBeDefined();
+      expect(result.page).toBe(0);
+    });
+
+    it('should handle list coupons with zero pageSize', async () => {
+      const result = await couponService.listCoupons(1, 0, 'valid');
+      expect(result).toBeDefined();
+      expect(result.pageSize).toBe(0);
+    });
+
+    it('should handle list coupons with negative page', async () => {
+      const result = await couponService.listCoupons(-1, 10, 'valid');
+      expect(result).toBeDefined();
+      expect(result.page).toBe(-1);
+    });
+
+    it('should handle list coupons with negative pageSize', async () => {
+      const result = await couponService.listCoupons(1, -5, 'valid');
+      expect(result).toBeDefined();
+      expect(result.pageSize).toBe(-5);
+    });
+
+    it('should handle list coupons with very large page', async () => {
+      const result = await couponService.listCoupons(999999, 10, 'valid');
+      expect(result).toBeDefined();
+      expect(result.page).toBe(999999);
+    });
+
+    it('should handle list coupons with very large pageSize', async () => {
+      const result = await couponService.listCoupons(1, 999999, 'valid');
+      expect(result).toBeDefined();
+      expect(result.pageSize).toBe(999999);
+    });
+
+    it('should handle list coupons with unknown type', async () => {
+      const result = await couponService.listCoupons(1, 10, 'unknown');
+      expect(result).toBeDefined();
+      expect(result.data).toBeDefined();
+    });
+
+    it('should handle list coupons with empty type', async () => {
+      const result = await couponService.listCoupons(1, 10, '');
+      expect(result).toBeDefined();
+      expect(result.data).toBeDefined();
+    });
+
+    it('should handle list coupons with null type', async () => {
+      const result = await couponService.listCoupons(1, 10, undefined);
+      expect(result).toBeDefined();
+      expect(result.data).toBeDefined();
+    });
+
+    it('should handle list coupons with undefined type', async () => {
+      const result = await couponService.listCoupons(1, 10, undefined);
+      expect(result).toBeDefined();
+      expect(result.data).toBeDefined();
+    });
+  });
+
+  describe('更新优惠券边界测试', () => {
+    it('should handle update coupon with empty data', async () => {
+      const couponData = {
+        name: '测试优惠券',
+        description: '测试描述',
+        type: 1,
+        threshold: 100,
+        amount: 10,
+        start_time: new Date(),
+        end_time: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        total: 100,
+        status: 1
+      };
+
+      const createdCoupon = await couponService.createCoupon(couponData);
+      const updateData = {};
+      const result = await couponService.updateCoupon(createdCoupon.id, updateData);
+      expect(result).toBeDefined();
+    });
+
+    it('should handle update coupon with null data', async () => {
+      const couponData = {
+        name: '测试优惠券',
+        description: '测试描述',
+        type: 1,
+        threshold: 100,
+        amount: 10,
+        start_time: new Date(),
+        end_time: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        total: 100,
+        status: 1
+      };
+
+      const createdCoupon = await couponService.createCoupon(couponData);
+      const updateData = null;
+      const result = await couponService.updateCoupon(createdCoupon.id, updateData);
+      expect(result).toBeDefined();
+    });
+
+    it('should handle update non-existent coupon', async () => {
+      const updateData = {
+        name: '更新后的优惠券',
+        description: '更新后的描述'
+      };
+
+      const result = await couponService.updateCoupon(99999, updateData);
+      expect(result).toBeDefined();
+    });
+
+    it('should handle update coupon with zero id', async () => {
+      const updateData = {
+        name: '更新后的优惠券',
+        description: '更新后的描述'
+      };
+
+      const result = await couponService.updateCoupon(0, updateData);
+      expect(result).toBeDefined();
+    });
+
+    it('should handle update coupon with negative id', async () => {
+      const updateData = {
+        name: '更新后的优惠券',
+        description: '更新后的描述'
+      };
+
+      const result = await couponService.updateCoupon(-1, updateData);
+      expect(result).toBeDefined();
+    });
+
+    it('should handle update coupon with very large id', async () => {
+      const updateData = {
+        name: '更新后的优惠券',
+        description: '更新后的描述'
+      };
+
+      const result = await couponService.updateCoupon(999999999, updateData);
+      expect(result).toBeDefined();
+    });
+  });
+
+  describe('删除优惠券边界测试', () => {
+    it('should handle delete non-existent coupon', async () => {
+      const result = await couponService.deleteCoupon(99999);
+      expect(result).toBeDefined();
+    });
+
+    it('should handle delete coupon with zero id', async () => {
+      const result = await couponService.deleteCoupon(0);
+      expect(result).toBeDefined();
+    });
+
+    it('should handle delete coupon with negative id', async () => {
+      const result = await couponService.deleteCoupon(-1);
+      expect(result).toBeDefined();
+    });
+
+    it('should handle delete coupon with very large id', async () => {
+      const result = await couponService.deleteCoupon(999999999);
+      expect(result).toBeDefined();
+    });
+  });
+
+  describe('自动下线任务测试', () => {
+    it('should handle auto offline with no expired coupons', async () => {
+      // 执行自动下线任务，没有过期优惠券的情况
+      await couponService.autoOfflineExpiredCoupons();
+      
+      // 验证任务执行成功
+      const result = await couponService.listCoupons(1, 10, 'invalid');
+      expect(result).toBeDefined();
+    });
+
+    it('should handle auto offline multiple times', async () => {
+      // 多次执行自动下线任务
+      await couponService.autoOfflineExpiredCoupons();
+      await couponService.autoOfflineExpiredCoupons();
+      await couponService.autoOfflineExpiredCoupons();
+      
+      // 验证任务执行成功
+      const result = await couponService.listCoupons(1, 10, 'invalid');
+      expect(result).toBeDefined();
+    });
+  });
+
+  describe('优惠券类型测试', () => {
+    it('should create discount coupon', async () => {
+      const couponData = {
+        name: '折扣优惠券',
+        description: '测试折扣优惠券',
+        type: 2, // 折扣类型
+        threshold: 100,
+        amount: 0.8, // 8折
+        start_time: new Date(),
+        end_time: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        total: 100,
+        status: 1
+      };
+
+      const coupon = await couponService.createCoupon(couponData);
+      expect(coupon).toBeDefined();
+      expect(coupon.type).toBe(2);
+      expect(coupon.amount).toBe(0.8);
+    });
+
+    it('should create coupon with zero threshold', async () => {
+      const couponData = {
+        name: '无门槛优惠券',
+        description: '测试无门槛优惠券',
+        type: 1,
+        threshold: 0,
+        amount: 10,
+        start_time: new Date(),
+        end_time: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        total: 100,
+        status: 1
+      };
+
+      const coupon = await couponService.createCoupon(couponData);
+      expect(coupon).toBeDefined();
+      expect(coupon.threshold).toBe(0);
+    });
+
+    it('should create coupon with negative threshold', async () => {
+      const couponData = {
+        name: '负门槛优惠券',
+        description: '测试负门槛优惠券',
+        type: 1,
+        threshold: -100,
+        amount: 10,
+        start_time: new Date(),
+        end_time: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        total: 100,
+        status: 1
+      };
+
+      const coupon = await couponService.createCoupon(couponData);
+      expect(coupon).toBeDefined();
+      expect(coupon.threshold).toBe(-100);
+    });
+
+    it('should create coupon with zero amount', async () => {
+      const couponData = {
+        name: '零金额优惠券',
+        description: '测试零金额优惠券',
+        type: 1,
+        threshold: 100,
+        amount: 0,
+        start_time: new Date(),
+        end_time: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        total: 100,
+        status: 1
+      };
+
+      const coupon = await couponService.createCoupon(couponData);
+      expect(coupon).toBeDefined();
+      expect(coupon.amount).toBe(0);
+    });
+
+    it('should create coupon with negative amount', async () => {
+      const couponData = {
+        name: '负金额优惠券',
+        description: '测试负金额优惠券',
+        type: 1,
+        threshold: 100,
+        amount: -10,
+        start_time: new Date(),
+        end_time: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        total: 100,
+        status: 1
+      };
+
+      const coupon = await couponService.createCoupon(couponData);
+      expect(coupon).toBeDefined();
+      expect(coupon.amount).toBe(-10);
+    });
+
+    it('should create coupon with zero total', async () => {
+      const couponData = {
+        name: '零总量优惠券',
+        description: '测试零总量优惠券',
+        type: 1,
+        threshold: 100,
+        amount: 10,
+        start_time: new Date(),
+        end_time: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        total: 0,
+        status: 1
+      };
+
+      const coupon = await couponService.createCoupon(couponData);
+      expect(coupon).toBeDefined();
+      expect(coupon.total).toBe(0);
+    });
+
+    it('should create coupon with negative total', async () => {
+      const couponData = {
+        name: '负总量优惠券',
+        description: '测试负总量优惠券',
+        type: 1,
+        threshold: 100,
+        amount: 10,
+        start_time: new Date(),
+        end_time: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        total: -100,
+        status: 1
+      };
+
+      const coupon = await couponService.createCoupon(couponData);
+      expect(coupon).toBeDefined();
+      expect(coupon.total).toBe(-100);
+    });
+
+    it('should create coupon with zero status', async () => {
+      const couponData = {
+        name: '无效优惠券',
+        description: '测试无效优惠券',
+        type: 1,
+        threshold: 100,
+        amount: 10,
+        start_time: new Date(),
+        end_time: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        total: 100,
+        status: 0
+      };
+
+      const coupon = await couponService.createCoupon(couponData);
+      expect(coupon).toBeDefined();
+      expect(coupon.status).toBe(0);
+    });
+
+    it('should create coupon with negative status', async () => {
+      const couponData = {
+        name: '负状态优惠券',
+        description: '测试负状态优惠券',
+        type: 1,
+        threshold: 100,
+        amount: 10,
+        start_time: new Date(),
+        end_time: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        total: 100,
+        status: -1
+      };
+
+      const coupon = await couponService.createCoupon(couponData);
+      expect(coupon).toBeDefined();
+      expect(coupon.status).toBe(-1);
+    });
+  });
+
+  describe('时间边界测试', () => {
+    it('should create coupon with past start time', async () => {
+      const couponData = {
+        name: '过去开始时间优惠券',
+        description: '测试过去开始时间优惠券',
+        type: 1,
+        threshold: 100,
+        amount: 10,
+        start_time: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7天前
+        end_time: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7天后
+        total: 100,
+        status: 1
+      };
+
+      const coupon = await couponService.createCoupon(couponData);
+      expect(coupon).toBeDefined();
+    });
+
+    it('should create coupon with future start time', async () => {
+      const couponData = {
+        name: '未来开始时间优惠券',
+        description: '测试未来开始时间优惠券',
+        type: 1,
+        threshold: 100,
+        amount: 10,
+        start_time: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7天后
+        end_time: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14天后
+        total: 100,
+        status: 1
+      };
+
+      const coupon = await couponService.createCoupon(couponData);
+      expect(coupon).toBeDefined();
+    });
+
+    it('should create coupon with same start and end time', async () => {
+      const now = new Date();
+      const couponData = {
+        name: '同时开始结束优惠券',
+        description: '测试同时开始结束优惠券',
+        type: 1,
+        threshold: 100,
+        amount: 10,
+        start_time: now,
+        end_time: now,
+        total: 100,
+        status: 1
+      };
+
+      const coupon = await couponService.createCoupon(couponData);
+      expect(coupon).toBeDefined();
+    });
+
+    it('should create coupon with end time before start time', async () => {
+      const couponData = {
+        name: '结束时间早于开始时间优惠券',
+        description: '测试结束时间早于开始时间优惠券',
+        type: 1,
+        threshold: 100,
+        amount: 10,
+        start_time: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7天后
+        end_time: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7天前
+        total: 100,
+        status: 1
+      };
+
+      const coupon = await couponService.createCoupon(couponData);
+      expect(coupon).toBeDefined();
+    });
+  });
 }); 
