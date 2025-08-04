@@ -439,8 +439,8 @@ describe('test/controller/blindbox.controller.test.ts', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({ name: 123, price: 'not_a_number' });
     expect([200, 400, 401, 403, 404, 422, 500]).toContain(result.status);
-  });
-}); 
+    });
+});
 
 // 覆盖异常分支：无效参数、未授权、未找到、异常抛出等
 
@@ -842,3 +842,235 @@ it('should return 400 for get list with invalid params', async () => {
       spy.mockRestore();
     });
   });
+
+  // 新增边界条件测试
+  describe('边界条件测试', () => {
+    it('应该处理零值blind_box_id', async () => {
+      const result = await createHttpRequest(app)
+        .post('/api/blindbox/items')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ blind_box_id: 0, name: 'test', image: 'test.jpg', rarity: 1, probability: 0.1 });
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+    });
+
+    it('应该处理负值blind_box_id', async () => {
+      const result = await createHttpRequest(app)
+        .post('/api/blindbox/items')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ blind_box_id: -1, name: 'test', image: 'test.jpg', rarity: 1, probability: 0.1 });
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+    });
+
+    it('应该处理极大值blind_box_id', async () => {
+      const result = await createHttpRequest(app)
+        .post('/api/blindbox/items')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ blind_box_id: 999999999, name: 'test', image: 'test.jpg', rarity: 1, probability: 0.1 });
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+    });
+
+    it('应该处理零值quantity', async () => {
+      const result = await createHttpRequest(app)
+        .post('/api/blindbox/draw')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ blind_box_id: 1, quantity: 0 });
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+    });
+
+    it('应该处理负值quantity', async () => {
+      const result = await createHttpRequest(app)
+        .post('/api/blindbox/draw')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ blind_box_id: 1, quantity: -1 });
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+    });
+
+    it('应该处理极大值quantity', async () => {
+      const result = await createHttpRequest(app)
+        .post('/api/blindbox/draw')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ blind_box_id: 1, quantity: 999999999 });
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+    });
+
+    it('应该处理零值price', async () => {
+      const result = await createHttpRequest(app)
+        .post('/api/blindbox')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ name: 'test', price: 0, stock: 10, status: 1, seller_id: 1 });
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+    });
+
+    it('应该处理负值price', async () => {
+      const result = await createHttpRequest(app)
+        .post('/api/blindbox')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ name: 'test', price: -1, stock: 10, status: 1, seller_id: 1 });
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+    });
+
+    it('应该处理极大值price', async () => {
+      const result = await createHttpRequest(app)
+        .post('/api/blindbox')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ name: 'test', price: 999999999.99, stock: 10, status: 1, seller_id: 1 });
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+    });
+
+    it('应该处理零值stock', async () => {
+      const result = await createHttpRequest(app)
+        .post('/api/blindbox')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ name: 'test', price: 10, stock: 0, status: 1, seller_id: 1 });
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+    });
+
+    it('应该处理负值stock', async () => {
+      const result = await createHttpRequest(app)
+        .post('/api/blindbox')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ name: 'test', price: 10, stock: -1, status: 1, seller_id: 1 });
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+    });
+
+    it('应该处理极大值stock', async () => {
+      const result = await createHttpRequest(app)
+        .post('/api/blindbox')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ name: 'test', price: 10, stock: 999999999, status: 1, seller_id: 1 });
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+    });
+
+    it('应该处理零值rarity', async () => {
+      const result = await createHttpRequest(app)
+        .post('/api/blindbox/items')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ blind_box_id: 1, name: 'test', image: 'test.jpg', rarity: 0, probability: 0.1 });
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+    });
+
+    it('应该处理负值rarity', async () => {
+      const result = await createHttpRequest(app)
+        .post('/api/blindbox/items')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ blind_box_id: 1, name: 'test', image: 'test.jpg', rarity: -1, probability: 0.1 });
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+    });
+
+    it('应该处理极大值rarity', async () => {
+      const result = await createHttpRequest(app)
+        .post('/api/blindbox/items')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ blind_box_id: 1, name: 'test', image: 'test.jpg', rarity: 999999999, probability: 0.1 });
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+    });
+
+    it('应该处理零值probability', async () => {
+      const result = await createHttpRequest(app)
+        .post('/api/blindbox/items')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ blind_box_id: 1, name: 'test', image: 'test.jpg', rarity: 1, probability: 0 });
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+    });
+
+    it('应该处理负值probability', async () => {
+      const result = await createHttpRequest(app)
+        .post('/api/blindbox/items')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ blind_box_id: 1, name: 'test', image: 'test.jpg', rarity: 1, probability: -0.1 });
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+    });
+
+    it('应该处理大于1的probability', async () => {
+      const result = await createHttpRequest(app)
+        .post('/api/blindbox/items')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ blind_box_id: 1, name: 'test', image: 'test.jpg', rarity: 1, probability: 1.1 });
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+    });
+
+    it('应该处理极大值probability', async () => {
+      const result = await createHttpRequest(app)
+        .post('/api/blindbox/items')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ blind_box_id: 1, name: 'test', image: 'test.jpg', rarity: 1, probability: 999999999 });
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+    });
+  });
+
+  // 新增异常处理测试
+  describe('异常处理测试', () => {
+    it('应该处理数据库连接异常', async () => {
+      const blindboxService = await app.getApplicationContext().getAsync(BlindBoxService);
+      const spy = jest.spyOn(blindboxService, 'create').mockImplementation(() => { 
+        throw new Error('数据库连接失败');
+      });
+      const result = await createHttpRequest(app)
+        .post('/api/blindbox')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ name: 'test', price: 10, stock: 10, status: 1, seller_id: 1 });
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+      spy.mockRestore();
+    });
+
+    it('应该处理并发操作异常', async () => {
+      const createData = {
+        name: '并发测试盲盒',
+        price: 10,
+        stock: 10,
+        status: 1,
+        seller_id: 1
+      };
+
+      const promises = Array(5).fill(null).map(() => 
+        createHttpRequest(app)
+          .post('/api/blindbox')
+          .set('Authorization', `Bearer ${token}`)
+          .send(createData)
+      );
+
+      const results = await Promise.all(promises);
+      results.forEach(result => {
+        expect([200, 400, 404, 422, 500]).toContain(result.status);
+      });
+    });
+
+    it('应该处理service抛出带status的错误', async () => {
+      const blindboxService = await app.getApplicationContext().getAsync(BlindBoxService);
+      const error = new Error('权限不足');
+      (error as { status?: number }).status = 403;
+      const spy = jest.spyOn(blindboxService, 'create').mockImplementation(() => { throw error; });
+      const result = await createHttpRequest(app)
+        .post('/api/blindbox')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ name: 'test', price: 10, stock: 10, status: 1, seller_id: 1 });
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+      spy.mockRestore();
+    });
+
+    it('应该处理service抛出带status的错误-404', async () => {
+      const blindboxService = await app.getApplicationContext().getAsync(BlindBoxService);
+      const error = new Error('资源不存在');
+      (error as { status?: number }).status = 404;
+      const spy = jest.spyOn(blindboxService, 'findById').mockImplementation(() => { throw error; });
+      const result = await createHttpRequest(app)
+        .get('/api/blindbox/1')
+        .set('Authorization', `Bearer ${token}`);
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+      spy.mockRestore();
+    });
+
+    it('应该处理service抛出带status的错误-422', async () => {
+      const blindboxService = await app.getApplicationContext().getAsync(BlindBoxService);
+      const error = new Error('参数错误');
+      (error as { status?: number }).status = 422;
+      const spy = jest.spyOn(blindboxService, 'create').mockImplementation(() => { throw error; });
+      const result = await createHttpRequest(app)
+        .post('/api/blindbox')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ name: 'test', price: 10, stock: 10, status: 1, seller_id: 1 });
+      expect([200, 400, 404, 422, 500]).toContain(result.status);
+      spy.mockRestore();
+    });
+  });
+

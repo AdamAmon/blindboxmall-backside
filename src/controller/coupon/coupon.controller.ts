@@ -10,21 +10,37 @@ export class CouponController {
 
   @Post('/')
   async create(@Body() dto: CreateCouponDTO) {
-    return await this.couponService.createCoupon(dto);
+    try {
+      return await this.couponService.createCoupon(dto);
+    } catch (error) {
+      throw error;
+    }
   }
 
   @Get('/')
   async list(@Query('page') page: number = 1, @Query('pageSize') pageSize: number = 10, @Query('type') type: 'valid' | 'invalid' = 'valid') {
-    return await this.couponService.listCoupons(page, pageSize, type);
+    try {
+      return await this.couponService.listCoupons(page, pageSize, type);
+    } catch (error) {
+      throw error;
+    }
   }
 
   @Put('/')
   async update(@Body() dto: UpdateCouponDTO) {
-    return await this.couponService.updateCoupon(dto.id, dto);
+    try {
+      return await this.couponService.updateCoupon(dto.id, dto);
+    } catch (error) {
+      throw error;
+    }
   }
 
   @Del('/')
   async delete(@Query('id') id: number) {
-    return await this.couponService.deleteCoupon(id);
+    try {
+      return await this.couponService.deleteCoupon(id);
+    } catch (error) {
+      throw error;
+    }
   }
 } 

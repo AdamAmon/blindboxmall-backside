@@ -868,4 +868,74 @@ describe('test/service/user-coupon.service.test.ts', () => {
       }
     });
   });
+
+  describe('分支覆盖补充测试-分支异常', () => {
+    it('should handle expireCoupons getMany throws error', async () => {
+      const mockQueryBuilder = {
+        leftJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockRejectedValue(new Error('getMany error')),
+      };
+      const originalCreateQueryBuilder = userCouponService.userCouponRepo.createQueryBuilder;
+      userCouponService.userCouponRepo.createQueryBuilder = jest.fn().mockReturnValue(mockQueryBuilder);
+      try {
+        await expect(userCouponService.expireCoupons()).rejects.toThrow('getMany error');
+      } finally {
+        userCouponService.userCouponRepo.createQueryBuilder = originalCreateQueryBuilder;
+      }
+    });
+
+    it('should handle expireCoupons update throws error', async () => {
+      const mockQueryBuilder = {
+        leftJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue([{ id: 1 }]),
+      };
+      const originalCreateQueryBuilder = userCouponService.userCouponRepo.createQueryBuilder;
+      const originalUpdate = userCouponService.userCouponRepo.update;
+      userCouponService.userCouponRepo.createQueryBuilder = jest.fn().mockReturnValue(mockQueryBuilder);
+      userCouponService.userCouponRepo.update = jest.fn().mockRejectedValue(new Error('update error'));
+      try {
+        await expect(userCouponService.expireCoupons()).rejects.toThrow('update error');
+      } finally {
+        userCouponService.userCouponRepo.createQueryBuilder = originalCreateQueryBuilder;
+        userCouponService.userCouponRepo.update = originalUpdate;
+      }
+    });
+
+    it('should handle cleanExpiredUserCoupons getMany throws error', async () => {
+      const mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockRejectedValue(new Error('getMany error')),
+      };
+      const originalCreateQueryBuilder = userCouponService.userCouponRepo.createQueryBuilder;
+      userCouponService.userCouponRepo.createQueryBuilder = jest.fn().mockReturnValue(mockQueryBuilder);
+      try {
+        await expect(userCouponService.cleanExpiredUserCoupons()).rejects.toThrow('getMany error');
+      } finally {
+        userCouponService.userCouponRepo.createQueryBuilder = originalCreateQueryBuilder;
+      }
+    });
+
+    it('should handle cleanExpiredUserCoupons delete throws error', async () => {
+      const mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue([{ id: 1 }]),
+      };
+      const originalCreateQueryBuilder = userCouponService.userCouponRepo.createQueryBuilder;
+      const originalDelete = userCouponService.userCouponRepo.delete;
+      userCouponService.userCouponRepo.createQueryBuilder = jest.fn().mockReturnValue(mockQueryBuilder);
+      userCouponService.userCouponRepo.delete = jest.fn().mockRejectedValue(new Error('delete error'));
+      try {
+        await expect(userCouponService.cleanExpiredUserCoupons()).rejects.toThrow('delete error');
+      } finally {
+        userCouponService.userCouponRepo.createQueryBuilder = originalCreateQueryBuilder;
+        userCouponService.userCouponRepo.delete = originalDelete;
+      }
+    });
+  });
 }); 

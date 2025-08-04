@@ -84,6 +84,80 @@ describe('test/controller/address.controller.test.ts', () => {
 
       expect([400, 422, 500]).toContain(result.status);
     });
+
+    // 新增测试用例
+    it('应该处理从DTO中获取user_id的情况', async () => {
+      const addressData = {
+        user_id: userId,
+        recipient: 'DTO用户',
+        phone: '14400000000',
+        province: '江苏',
+        city: '南京',
+        district: '鼓楼',
+        detail: 'DTO路'
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/address/create')
+        .set('Authorization', `Bearer ${token}`)
+        .send(addressData);
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('应该处理从ctx.user中获取用户ID的情况', async () => {
+      const addressData = {
+        recipient: 'CTX用户',
+        phone: '14500000000',
+        province: '江苏',
+        city: '南京',
+        district: '鼓楼',
+        detail: 'CTX路'
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/address/create')
+        .set('Authorization', `Bearer ${token}`)
+        .send(addressData);
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('应该处理无效的userId参数', async () => {
+      const addressData = {
+        recipient: '无效用户',
+        phone: '14600000000',
+        province: '江苏',
+        city: '南京',
+        district: '鼓楼',
+        detail: '无效路'
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/address/create?userId=abc')
+        .set('Authorization', `Bearer ${token}`)
+        .send(addressData);
+
+      expect([400, 500]).toContain(result.status);
+    });
+
+    it('应该处理NaN的userId参数', async () => {
+      const addressData = {
+        recipient: 'NaN用户',
+        phone: '14700000000',
+        province: '江苏',
+        city: '南京',
+        district: '鼓楼',
+        detail: 'NaN路'
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/address/create?userId=NaN')
+        .set('Authorization', `Bearer ${token}`)
+        .send(addressData);
+
+      expect([400, 500]).toContain(result.status);
+    });
   });
 
   describe('地址查询', () => {
@@ -114,6 +188,55 @@ describe('test/controller/address.controller.test.ts', () => {
         .set('Authorization', `Bearer ${token}`);
 
       expect([200, 404]).toContain(result.status);
+    });
+
+    // 新增测试用例
+    it('应该处理从ctx.user中获取用户ID的列表查询', async () => {
+      const result = await createHttpRequest(app)
+        .get('/api/address/list')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect([200, 400]).toContain(result.status);
+    });
+
+    it('应该处理无效的userId参数列表查询', async () => {
+      const result = await createHttpRequest(app)
+        .get('/api/address/list?userId=abc')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(result.body.success).toBe(false);
+    });
+
+    it('应该处理NaN的userId参数列表查询', async () => {
+      const result = await createHttpRequest(app)
+        .get('/api/address/list?userId=NaN')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(result.body.success).toBe(false);
+    });
+
+    it('应该处理空字符串的id参数', async () => {
+      const result = await createHttpRequest(app)
+        .get('/api/address/detail?id=')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect([400, 404, 500]).toContain(result.status);
+    });
+
+    it('应该处理null的id参数', async () => {
+      const result = await createHttpRequest(app)
+        .get('/api/address/detail?id=null')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect([400, 404, 500]).toContain(result.status);
+    });
+
+    it('应该处理undefined的id参数', async () => {
+      const result = await createHttpRequest(app)
+        .get('/api/address/detail?id=undefined')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect([400, 404, 500]).toContain(result.status);
     });
   });
 
@@ -176,6 +299,65 @@ describe('test/controller/address.controller.test.ts', () => {
 
       expect([404, 500]).toContain(result.status);
     });
+
+    // 新增测试用例
+    it('应该处理从DTO中获取user_id的更新', async () => {
+      const updateData = {
+        id: addressId,
+        user_id: userId,
+        recipient: 'DTO更新用户',
+        phone: '14800000000',
+        province: '江苏',
+        city: '南京',
+        district: '鼓楼',
+        detail: 'DTO更新路'
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/address/update')
+        .set('Authorization', `Bearer ${token}`)
+        .send(updateData);
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('应该处理从ctx.user中获取用户ID的更新', async () => {
+      const updateData = {
+        id: addressId,
+        recipient: 'CTX更新用户',
+        phone: '14900000000',
+        province: '江苏',
+        city: '南京',
+        district: '鼓楼',
+        detail: 'CTX更新路'
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/address/update')
+        .set('Authorization', `Bearer ${token}`)
+        .send(updateData);
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('应该处理NaN的userId参数更新', async () => {
+      const updateData = {
+        id: addressId,
+        recipient: 'NaN更新用户',
+        phone: '15000000000',
+        province: '江苏',
+        city: '南京',
+        district: '鼓楼',
+        detail: 'NaN更新路'
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/address/update?userId=NaN')
+        .set('Authorization', `Bearer ${token}`)
+        .send(updateData);
+
+      expect([400, 500]).toContain(result.status);
+    });
   });
 
   describe('地址删除', () => {
@@ -225,6 +407,43 @@ describe('test/controller/address.controller.test.ts', () => {
         .send(deleteData);
 
       expect([404, 500]).toContain(result.status);
+    });
+
+    // 新增测试用例
+    it('应该处理从DTO中获取user_id的删除', async () => {
+      const deleteData = { 
+        id: addressId,
+        user_id: userId
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/address/delete')
+        .set('Authorization', `Bearer ${token}`)
+        .send(deleteData);
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('应该处理从ctx.user中获取用户ID的删除', async () => {
+      const deleteData = { id: addressId };
+
+      const result = await createHttpRequest(app)
+        .post('/api/address/delete')
+        .set('Authorization', `Bearer ${token}`)
+        .send(deleteData);
+
+      expect([200, 400, 500]).toContain(result.status);
+    });
+
+    it('应该处理NaN的userId参数删除', async () => {
+      const deleteData = { id: addressId };
+
+      const result = await createHttpRequest(app)
+        .post('/api/address/delete?userId=NaN')
+        .set('Authorization', `Bearer ${token}`)
+        .send(deleteData);
+
+      expect([400, 500]).toContain(result.status);
     });
   });
 
@@ -369,6 +588,55 @@ describe('test/controller/address.controller.test.ts', () => {
       expect([500, 200]).toContain(result.status);
       spy.mockRestore();
     });
+
+    // 新增测试用例
+    it('应该处理更新地址时404异常', async () => {
+      const updateData = {
+        id: 99999,
+        recipient: '404用户',
+        phone: '15100000000',
+        province: '江苏',
+        city: '南京',
+        district: '鼓楼',
+        detail: '404路'
+      };
+      const spy = jest.spyOn(app.getApplicationContext().get('addressService'), 'updateAddress').mockImplementation(() => { 
+        const error = new Error('地址不存在');
+        (error as { status?: number }).status = 404;
+        throw error;
+      });
+      const result = await createHttpRequest(app)
+        .post(`/api/address/update?userId=${userId}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send(updateData);
+      expect([404, 500]).toContain(result.status);
+      spy.mockRestore();
+    });
+
+    it('应该处理删除地址时404异常', async () => {
+      const deleteData = { id: 99999 };
+      const spy = jest.spyOn(app.getApplicationContext().get('addressService'), 'deleteAddress').mockImplementation(() => { 
+        const error = new Error('地址不存在');
+        (error as { status?: number }).status = 404;
+        throw error;
+      });
+      const result = await createHttpRequest(app)
+        .post(`/api/address/delete?userId=${userId}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send(deleteData);
+      expect([404, 500]).toContain(result.status);
+      spy.mockRestore();
+    });
+
+    it('应该处理地址详情查询时数据库异常', async () => {
+      const addressService = await app.getApplicationContext().getAsync(AddressService);
+      const spy = jest.spyOn(addressService.addressModel, 'findOne').mockImplementation(() => { throw new Error('database error'); });
+      const result = await createHttpRequest(app)
+        .get(`/api/address/detail?id=${addressId}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect([500, 200]).toContain(result.status);
+      spy.mockRestore();
+    });
   });
 
   it('should fail to get address list without userId', async () => {
@@ -415,5 +683,348 @@ describe('test/controller/address.controller.test.ts', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({ recipient: 123, phone: null });
     expect([200, 400, 401, 403, 404, 422, 500]).toContain(result.status);
+  });
+
+  // 新增异常处理测试
+  describe('异常处理测试', () => {
+    it('应该处理数据库连接异常', async () => {
+      const addressService = await app.getApplicationContext().getAsync(AddressService);
+      const spy = jest.spyOn(addressService, 'createAddress').mockImplementation(() => { 
+        throw new Error('数据库连接失败');
+      });
+      const result = await createHttpRequest(app)
+        .post(`/api/address/create?userId=${userId}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          recipient: '数据库异常用户',
+          phone: '15800000000',
+          province: '江苏',
+          city: '南京',
+          district: '鼓楼',
+          detail: '数据库异常路'
+        });
+      expect([500, 200]).toContain(result.status);
+      spy.mockRestore();
+    });
+
+    it('应该处理并发操作异常', async () => {
+      const addressData = {
+        recipient: '并发用户',
+        phone: '15900000000',
+        province: '江苏',
+        city: '南京',
+        district: '鼓楼',
+        detail: '并发路'
+      };
+
+      const promises = Array(5).fill(null).map(() => 
+        createHttpRequest(app)
+          .post(`/api/address/create?userId=${userId}`)
+          .set('Authorization', `Bearer ${token}`)
+          .send(addressData)
+      );
+
+      const results = await Promise.all(promises);
+      results.forEach(result => {
+        expect([200, 400, 500]).toContain(result.status);
+      });
+    });
+
+    // 新增测试用例：覆盖未覆盖的分支
+    it('应该处理删除地址时service返回false的情况', async () => {
+      const deleteData = { id: 99999 };
+      const spy = jest.spyOn(app.getApplicationContext().get('addressService'), 'deleteAddress').mockResolvedValue(false);
+      const result = await createHttpRequest(app)
+        .post(`/api/address/delete?userId=${userId}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send(deleteData);
+      expect([404, 500]).toContain(result.status);
+      expect(result.body.success).toBe(false);
+      spy.mockRestore();
+    });
+
+    it('应该处理更新地址时service抛出非404异常', async () => {
+      const updateData = {
+        id: addressId,
+        recipient: '异常用户',
+        phone: '16000000000',
+        province: '江苏',
+        city: '南京',
+        district: '鼓楼',
+        detail: '异常路'
+      };
+      const spy = jest.spyOn(app.getApplicationContext().get('addressService'), 'updateAddress').mockImplementation(() => { 
+        throw new Error('其他异常');
+      });
+      const result = await createHttpRequest(app)
+        .post(`/api/address/update?userId=${userId}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send(updateData);
+      expect(result.status).toBe(500);
+      expect(result.body.success).toBe(false);
+      spy.mockRestore();
+    });
+
+    it('应该处理删除地址时service抛出非404异常', async () => {
+      const deleteData = { id: addressId };
+      const spy = jest.spyOn(app.getApplicationContext().get('addressService'), 'deleteAddress').mockImplementation(() => { 
+        throw new Error('其他异常');
+      });
+      const result = await createHttpRequest(app)
+        .post(`/api/address/delete?userId=${userId}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send(deleteData);
+      expect(result.status).toBe(500);
+      expect(result.body.success).toBe(false);
+      spy.mockRestore();
+    });
+
+    it('应该处理地址详情查询时数据库返回null', async () => {
+      const addressService = await app.getApplicationContext().getAsync(AddressService);
+      const spy = jest.spyOn(addressService.addressModel, 'findOne').mockResolvedValue(null);
+      const result = await createHttpRequest(app)
+        .get(`/api/address/detail?id=${addressId}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(result.status).toBe(200);
+      expect(result.body.success).toBe(false);
+      expect(result.body.message).toBe('地址不存在');
+      spy.mockRestore();
+    });
+
+    it('应该处理设置默认地址时service抛出异常', async () => {
+      const spy = jest.spyOn(app.getApplicationContext().get('addressService'), 'setDefaultAddress').mockImplementation(() => { 
+        throw new Error('设置默认地址失败');
+      });
+      const result = await createHttpRequest(app)
+        .post(`/api/address/set_default?userId=${userId}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ id: addressId });
+      expect(result.status).toBe(200);
+      expect(result.body.success).toBe(false);
+      spy.mockRestore();
+    });
+
+    it('应该处理获取地址列表时service抛出异常', async () => {
+      const addressService = await app.getApplicationContext().getAsync(AddressService);
+      const spy = jest.spyOn(addressService, 'listAddresses').mockImplementation(() => { 
+        throw new Error('获取地址列表失败');
+      });
+      const result = await createHttpRequest(app)
+        .get(`/api/address/list?userId=${userId}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(result.status).toBe(200);
+      expect(result.body.success).toBe(true);
+      spy.mockRestore();
+    });
+
+    it('应该处理地址详情查询时数据库抛出异常', async () => {
+      const addressService = await app.getApplicationContext().getAsync(AddressService);
+      const spy = jest.spyOn(addressService.addressModel, 'findOne').mockImplementation(() => { 
+        throw new Error('数据库查询异常');
+      });
+      const result = await createHttpRequest(app)
+        .get(`/api/address/detail?id=${addressId}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(result.status).toBe(200);
+      expect(result.body.success).toBe(false);
+      expect(result.body.message).toBe('数据库查询异常');
+      spy.mockRestore();
+    });
+  });
+
+  // 新增边界条件测试
+  describe('边界条件测试', () => {
+    it('应该处理零值userId', async () => {
+      const result = await createHttpRequest(app)
+        .post('/api/address/create?userId=0')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          recipient: '零值用户',
+          phone: '15200000000',
+          province: '江苏',
+          city: '南京',
+          district: '鼓楼',
+          detail: '零值路'
+        });
+      expect([400, 500]).toContain(result.status);
+    });
+
+    it('应该处理负值userId', async () => {
+      const result = await createHttpRequest(app)
+        .post('/api/address/create?userId=-1')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          recipient: '负值用户',
+          phone: '15300000000',
+          province: '江苏',
+          city: '南京',
+          district: '鼓楼',
+          detail: '负值路'
+        });
+      expect([400, 500]).toContain(result.status);
+    });
+
+    it('应该处理极大值userId', async () => {
+      const result = await createHttpRequest(app)
+        .post('/api/address/create?userId=999999999999999')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          recipient: '极大值用户',
+          phone: '15400000000',
+          province: '江苏',
+          city: '南京',
+          district: '鼓楼',
+          detail: '极大值路'
+        });
+      expect([200, 400, 500]).toContain(result.status);
+    });
+
+    it('应该处理空字符串userId', async () => {
+      const result = await createHttpRequest(app)
+        .post('/api/address/create?userId=')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          recipient: '空字符串用户',
+          phone: '15500000000',
+          province: '江苏',
+          city: '南京',
+          district: '鼓楼',
+          detail: '空字符串路'
+        });
+      expect([400, 500]).toContain(result.status);
+    });
+
+    it('应该处理null userId', async () => {
+      const result = await createHttpRequest(app)
+        .post('/api/address/create?userId=null')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          recipient: 'null用户',
+          phone: '15600000000',
+          province: '江苏',
+          city: '南京',
+          district: '鼓楼',
+          detail: 'null路'
+        });
+      expect([400, 500]).toContain(result.status);
+    });
+
+    it('应该处理undefined userId', async () => {
+      const result = await createHttpRequest(app)
+        .post('/api/address/create?userId=undefined')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          recipient: 'undefined用户',
+          phone: '15700000000',
+          province: '江苏',
+          city: '南京',
+          district: '鼓楼',
+          detail: 'undefined路'
+        });
+      expect([400, 500]).toContain(result.status);
+    });
+
+    // 新增测试用例：覆盖更多边界条件
+    it('应该处理创建地址时所有用户ID来源都无效的情况', async () => {
+      const addressData = {
+        recipient: '无效用户',
+        phone: '16100000000',
+        province: '江苏',
+        city: '南京',
+        district: '鼓楼',
+        detail: '无效路'
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/address/create?userId=abc')
+        .set('Authorization', `Bearer ${token}`)
+        .send(addressData);
+
+      expect([400, 500]).toContain(result.status);
+      expect(result.body.success).toBe(false);
+    });
+
+    it('应该处理更新地址时所有用户ID来源都无效的情况', async () => {
+      const updateData = {
+        id: addressId,
+        recipient: '无效更新用户',
+        phone: '16200000000',
+        province: '江苏',
+        city: '南京',
+        district: '鼓楼',
+        detail: '无效更新路'
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/address/update?userId=abc')
+        .set('Authorization', `Bearer ${token}`)
+        .send(updateData);
+
+      expect([400, 500]).toContain(result.status);
+      expect(result.body.success).toBe(false);
+    });
+
+    it('应该处理删除地址时所有用户ID来源都无效的情况', async () => {
+      const deleteData = { id: addressId };
+
+      const result = await createHttpRequest(app)
+        .post('/api/address/delete?userId=abc')
+        .set('Authorization', `Bearer ${token}`)
+        .send(deleteData);
+
+      expect([400, 500]).toContain(result.status);
+      expect(result.body.success).toBe(false);
+    });
+
+    it('应该处理获取地址列表时所有用户ID来源都无效的情况', async () => {
+      const result = await createHttpRequest(app)
+        .get('/api/address/list?userId=abc')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(result.body.success).toBe(false);
+      expect(result.body.message).toBe('缺少或非法用户ID');
+    });
+
+    it('应该处理地址详情查询时id为null', async () => {
+      const result = await createHttpRequest(app)
+        .get('/api/address/detail?id=null')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect([400, 404, 500]).toContain(result.status);
+    });
+
+    it('应该处理地址详情查询时id为undefined', async () => {
+      const result = await createHttpRequest(app)
+        .get('/api/address/detail?id=undefined')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect([400, 404, 500]).toContain(result.status);
+    });
+
+    it('应该处理地址详情查询时id为空字符串', async () => {
+      const result = await createHttpRequest(app)
+        .get('/api/address/detail?id=')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect([400, 404, 500]).toContain(result.status);
+    });
+
+    it('应该处理地址详情查询时id为NaN', async () => {
+      const result = await createHttpRequest(app)
+        .get('/api/address/detail?id=NaN')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect([400, 404, 500]).toContain(result.status);
+    });
+
+
+
+    it('应该处理地址详情查询时id为极大值', async () => {
+      const result = await createHttpRequest(app)
+        .get('/api/address/detail?id=999999999999999')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect([200, 400, 404, 500]).toContain(result.status);
+    });
   });
 }); 

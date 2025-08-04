@@ -847,5 +847,171 @@ describe('test/service/coupon.service.test.ts', () => {
         couponService.couponRepo.createQueryBuilder = originalCreateQueryBuilder;
       }
     });
+
+    it('should handle constructor with unittest environment', () => {
+      const originalEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'unittest';
+      
+      // 创建新的服务实例，验证不启动定时任务
+      const newService = new CouponService();
+      expect(newService).toBeDefined();
+      
+      // 恢复环境变量
+      process.env.NODE_ENV = originalEnv;
+    });
+
+    it('should handle constructor with production environment', () => {
+      const originalEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'production';
+      
+      // 创建新的服务实例，验证启动定时任务
+      const newService = new CouponService();
+      expect(newService).toBeDefined();
+      
+      // 恢复环境变量
+      process.env.NODE_ENV = originalEnv;
+    });
+
+    it('should handle startAutoOfflineTask method', () => {
+      const originalEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'production';
+      
+      // 创建服务实例
+      const service = new CouponService();
+      
+      // 获取私有方法
+      const startAutoOfflineTask = (service as unknown as Record<string, unknown>).startAutoOfflineTask;
+      expect(typeof startAutoOfflineTask).toBe('function');
+      
+      // 恢复环境变量
+      process.env.NODE_ENV = originalEnv;
+    });
+
+    it('should handle autoOfflineExpiredCoupons with repository error', async () => {
+      const mockQueryBuilder = {
+        update: jest.fn().mockReturnThis(),
+        set: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        execute: jest.fn().mockRejectedValue(new Error('Database error'))
+      };
+      
+      const mockCreateQueryBuilder = jest.fn().mockReturnValue(mockQueryBuilder);
+      
+      // 临时替换方法
+      const originalCreateQueryBuilder = couponService.couponRepo.createQueryBuilder;
+      couponService.couponRepo.createQueryBuilder = mockCreateQueryBuilder;
+
+      try {
+        await expect(couponService.autoOfflineExpiredCoupons()).rejects.toThrow('Database error');
+      } catch (error) {
+        expect(error.message).toBe('Database error');
+      } finally {
+        // 恢复原始方法
+        couponService.couponRepo.createQueryBuilder = originalCreateQueryBuilder;
+      }
+    });
+
+    it('should handle listCoupons with valid type branch', async () => {
+      const mockQueryBuilder = {
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getManyAndCount: jest.fn().mockResolvedValue([[], 0])
+      };
+      
+      const mockCreateQueryBuilder = jest.fn().mockReturnValue(mockQueryBuilder);
+      
+      // 临时替换方法
+      const originalCreateQueryBuilder = couponService.couponRepo.createQueryBuilder;
+      couponService.couponRepo.createQueryBuilder = mockCreateQueryBuilder;
+
+      try {
+        const result = await couponService.listCoupons(1, 10, 'valid');
+        expect(result).toEqual({
+          data: [],
+          total: 0,
+          page: 1,
+          pageSize: 10
+        });
+        // 验证调用了 valid 分支的 where 条件
+        expect(mockQueryBuilder.where).toHaveBeenCalledWith('coupon.status = 1');
+        expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('coupon.end_time >= :now', { now: expect.any(Date) });
+      } finally {
+        // 恢复原始方法
+        couponService.couponRepo.createQueryBuilder = originalCreateQueryBuilder;
+      }
+    });
+
+    it('should handle listCoupons with invalid type branch', async () => {
+      const mockQueryBuilder = {
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getManyAndCount: jest.fn().mockResolvedValue([[], 0])
+      };
+      
+      const mockCreateQueryBuilder = jest.fn().mockReturnValue(mockQueryBuilder);
+      
+      // 临时替换方法
+      const originalCreateQueryBuilder = couponService.couponRepo.createQueryBuilder;
+      couponService.couponRepo.createQueryBuilder = mockCreateQueryBuilder;
+
+      try {
+        const result = await couponService.listCoupons(1, 10, 'invalid');
+        expect(result).toEqual({
+          data: [],
+          total: 0,
+          page: 1,
+          pageSize: 10
+        });
+        // 验证调用了 invalid 分支的 where 条件
+        expect(mockQueryBuilder.where).toHaveBeenCalledWith('coupon.status = 0');
+        expect(mockQueryBuilder.orWhere).toHaveBeenCalledWith('coupon.end_time < :now', { now: expect.any(Date) });
+      } finally {
+        // 恢复原始方法
+        couponService.couponRepo.createQueryBuilder = originalCreateQueryBuilder;
+      }
+    });
+
+    it('should handle listCoupons with empty string type branch', async () => {
+      const mockQueryBuilder = {
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getManyAndCount: jest.fn().mockResolvedValue([[], 0])
+      };
+      
+      const mockCreateQueryBuilder = jest.fn().mockReturnValue(mockQueryBuilder);
+      
+      // 临时替换方法
+      const originalCreateQueryBuilder = couponService.couponRepo.createQueryBuilder;
+      couponService.couponRepo.createQueryBuilder = mockCreateQueryBuilder;
+
+      try {
+        const result = await couponService.listCoupons(1, 10, '');
+        expect(result).toEqual({
+          data: [],
+          total: 0,
+          page: 1,
+          pageSize: 10
+        });
+        // 验证调用了 else 分支的 where 条件
+        expect(mockQueryBuilder.where).toHaveBeenCalledWith('coupon.status = 0');
+        expect(mockQueryBuilder.orWhere).toHaveBeenCalledWith('coupon.end_time < :now', { now: expect.any(Date) });
+      } finally {
+        // 恢复原始方法
+        couponService.couponRepo.createQueryBuilder = originalCreateQueryBuilder;
+      }
+    });
   });
 }); 

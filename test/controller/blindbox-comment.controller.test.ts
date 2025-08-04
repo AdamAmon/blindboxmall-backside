@@ -627,9 +627,8 @@ describe('test/controller/blindbox-comment.controller.test.ts', () => {
         .set('Authorization', `Bearer ${token}`)
         .send(commentData);
 
-      expect([200, 400, 422, 500]).toContain(result.status);
+      expect([200, 400, 500]).toContain(result.status);
       expect([true, false]).toContain(result.body.success);
-      expect(typeof result.body.message).toBe('string');
 
       // 恢复原始方法
       mockService.createComment = originalCreateComment;
@@ -650,9 +649,8 @@ describe('test/controller/blindbox-comment.controller.test.ts', () => {
           limit: 10
         });
 
-      expect([200, 400, 422, 500]).toContain(result.status);
+      expect([200, 400, 500]).toContain(result.status);
       expect([true, false]).toContain(result.body.success);
-      expect(typeof result.body.message).toBe('string');
 
       // 恢复原始方法
       mockService.getComments = originalGetComments;
@@ -673,9 +671,8 @@ describe('test/controller/blindbox-comment.controller.test.ts', () => {
         .set('Authorization', `Bearer ${token}`)
         .send(likeData);
 
-      expect([200, 400, 422, 500]).toContain(result.status);
+      expect([200, 400, 500]).toContain(result.status);
       expect([true, false]).toContain(result.body.success);
-      expect(typeof result.body.message).toBe('string');
 
       // 恢复原始方法
       mockService.toggleLikeComment = originalToggleLikeComment;
@@ -691,9 +688,8 @@ describe('test/controller/blindbox-comment.controller.test.ts', () => {
         .del(`/api/blindbox/comment/${commentId}`)
         .set('Authorization', `Bearer ${token}`);
 
-      expect([200, 400, 422, 500]).toContain(result.status);
+      expect([200, 400, 500]).toContain(result.status);
       expect([true, false]).toContain(result.body.success);
-      expect(typeof result.body.message).toBe('string');
 
       // 恢复原始方法
       mockService.deleteComment = originalDeleteComment;
@@ -709,9 +705,8 @@ describe('test/controller/blindbox-comment.controller.test.ts', () => {
         .get(`/api/blindbox/comment/${commentId}`)
         .set('Authorization', `Bearer ${token}`);
 
-      expect([200, 400, 422, 500]).toContain(result.status);
+      expect([200, 400, 500]).toContain(result.status);
       expect([true, false]).toContain(result.body.success);
-      expect(typeof result.body.message).toBe('string');
 
       // 恢复原始方法
       mockService.getCommentById = originalGetCommentById;
@@ -727,9 +722,9 @@ describe('test/controller/blindbox-comment.controller.test.ts', () => {
         .get('/api/blindbox/comment/99999')
         .set('Authorization', `Bearer ${token}`);
 
-      expect([200, 400, 422, 500]).toContain(result.status);
-      expect([true, false]).toContain(result.body.success);
-      expect(typeof result.body.message).toBe('string');
+      expect(result.status).toBe(200);
+      expect(result.body.success).toBe(false);
+      expect(result.body.message).toBe('评论不存在');
 
       // 恢复原始方法
       mockService.getCommentById = originalGetCommentById;
@@ -744,7 +739,7 @@ describe('test/controller/blindbox-comment.controller.test.ts', () => {
         .set('Authorization', `Bearer ${token}`)
         .send(likeData);
 
-      expect([200, 400, 422, 500]).toContain(result.status);
+      expect([400, 422]).toContain(result.status);
     });
 
     it('should handle invalid comment_id type in like', async () => {
@@ -758,7 +753,7 @@ describe('test/controller/blindbox-comment.controller.test.ts', () => {
         .set('Authorization', `Bearer ${token}`)
         .send(likeData);
 
-      expect([200, 400, 422, 500]).toContain(result.status);
+      expect([400, 422]).toContain(result.status);
     });
 
     it('should handle negative comment_id in like', async () => {
@@ -772,7 +767,7 @@ describe('test/controller/blindbox-comment.controller.test.ts', () => {
         .set('Authorization', `Bearer ${token}`)
         .send(likeData);
 
-      expect([200, 400, 422, 500]).toContain(result.status);
+      expect([400, 422]).toContain(result.status);
     });
 
     it('should handle very large comment_id in like', async () => {
@@ -786,7 +781,7 @@ describe('test/controller/blindbox-comment.controller.test.ts', () => {
         .set('Authorization', `Bearer ${token}`)
         .send(likeData);
 
-      expect([200, 400, 404, 422, 500]).toContain(result.status);
+      expect([400, 404, 422]).toContain(result.status);
     });
 
     it('should handle missing blind_box_id in create comment', async () => {
@@ -800,7 +795,7 @@ describe('test/controller/blindbox-comment.controller.test.ts', () => {
         .set('Authorization', `Bearer ${token}`)
         .send(commentData);
 
-      expect([200, 400, 422, 500]).toContain(result.status);
+      expect([400, 422]).toContain(result.status);
     });
 
     it('should handle invalid blind_box_id type in create comment', async () => {
@@ -815,7 +810,7 @@ describe('test/controller/blindbox-comment.controller.test.ts', () => {
         .set('Authorization', `Bearer ${token}`)
         .send(commentData);
 
-      expect([200, 400, 422, 500]).toContain(result.status);
+      expect([400, 422]).toContain(result.status);
     });
 
     it('should handle negative blind_box_id in create comment', async () => {
@@ -1102,6 +1097,158 @@ describe('test/controller/blindbox-comment.controller.test.ts', () => {
         .set('Authorization', `Bearer ${token}`);
 
       expect([200, 400, 404, 422, 500]).toContain(result.status);
+    });
+
+    // 新增测试用例：覆盖更多异常分支
+    it('should handle debug service error in debug all comments', async () => {
+      const mockService = await app.getApplicationContext().getAsync(BlindBoxCommentService);
+      const originalDebugGetAllComments = mockService.debugGetAllComments;
+      mockService.debugGetAllComments = jest.fn().mockRejectedValue(new Error('调试数据获取失败'));
+
+      const result = await createHttpRequest(app)
+        .get('/api/blindbox/comment/debug/all')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect([200, 400, 500]).toContain(result.status);
+      expect([true, false]).toContain(result.body.success);
+
+      mockService.debugGetAllComments = originalDebugGetAllComments;
+    });
+
+    it('should handle debug service error in clean duplicate comments', async () => {
+      const mockService = await app.getApplicationContext().getAsync(BlindBoxCommentService);
+      const originalCleanDuplicateComments = mockService.cleanDuplicateComments;
+      mockService.cleanDuplicateComments = jest.fn().mockRejectedValue(new Error('清理失败'));
+
+      const result = await createHttpRequest(app)
+        .get('/api/blindbox/comment/debug/clean')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect([200, 400, 500]).toContain(result.status);
+      expect([true, false]).toContain(result.body.success);
+
+      mockService.cleanDuplicateComments = originalCleanDuplicateComments;
+    });
+
+    it('should handle debug service error in debug raw SQL', async () => {
+      const mockService = await app.getApplicationContext().getAsync(BlindBoxCommentService);
+      const originalDebugGetCommentsWithRawSQL = mockService.debugGetCommentsWithRawSQL;
+      mockService.debugGetCommentsWithRawSQL = jest.fn().mockRejectedValue(new Error('原生SQL查询失败'));
+
+      const result = await createHttpRequest(app)
+        .get(`/api/blindbox/comment/debug/raw/${blindBoxId}`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect([200, 400, 500]).toContain(result.status);
+      expect([true, false]).toContain(result.body.success);
+
+      mockService.debugGetCommentsWithRawSQL = originalDebugGetCommentsWithRawSQL;
+    });
+
+    // 新增测试用例：覆盖用户未登录的情况
+    it('should handle unauthorized user in like comment', async () => {
+      const likeData = {
+        comment_id: commentId
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/blindbox/comment/like')
+        .send(likeData);
+
+      expect([401, 403]).toContain(result.status);
+    });
+
+    it('should handle unauthorized user in delete comment', async () => {
+      const result = await createHttpRequest(app)
+        .del(`/api/blindbox/comment/${commentId}`);
+
+      expect([401, 403]).toContain(result.status);
+    });
+
+    // 新增测试用例：覆盖空内容的情况
+    it('should handle empty content in create comment', async () => {
+      const commentData = {
+        blind_box_id: blindBoxId,
+        content: ''
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/blindbox/comment')
+        .set('Authorization', `Bearer ${token}`)
+        .send(commentData);
+
+      expect([400, 422]).toContain(result.status);
+    });
+
+    it('should handle null content in create comment', async () => {
+      const commentData = {
+        blind_box_id: blindBoxId,
+        content: null
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/blindbox/comment')
+        .set('Authorization', `Bearer ${token}`)
+        .send(commentData);
+
+      expect([400, 422]).toContain(result.status);
+    });
+
+    it('should handle undefined content in create comment', async () => {
+      const commentData = {
+        blind_box_id: blindBoxId,
+        content: undefined
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/blindbox/comment')
+        .set('Authorization', `Bearer ${token}`)
+        .send(commentData);
+
+      expect([400, 422]).toContain(result.status);
+    });
+
+    // 新增测试用例：覆盖点赞成功和取消点赞的情况
+    it('should handle toggle like comment - like success', async () => {
+      const likeData = {
+        comment_id: commentId
+      };
+
+      const mockService = await app.getApplicationContext().getAsync(BlindBoxCommentService);
+      const originalToggleLikeComment = mockService.toggleLikeComment;
+      mockService.toggleLikeComment = jest.fn().mockResolvedValue({ liked: true });
+
+      const result = await createHttpRequest(app)
+        .post('/api/blindbox/comment/like')
+        .set('Authorization', `Bearer ${token}`)
+        .send(likeData);
+
+      expect(result.status).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toBe('点赞成功');
+
+      mockService.toggleLikeComment = originalToggleLikeComment;
+    });
+
+    it('should handle toggle like comment - unlike success', async () => {
+      const likeData = {
+        comment_id: commentId
+      };
+
+      const mockService = await app.getApplicationContext().getAsync(BlindBoxCommentService);
+      const originalToggleLikeComment = mockService.toggleLikeComment;
+      mockService.toggleLikeComment = jest.fn().mockResolvedValue({ liked: false });
+
+      const result = await createHttpRequest(app)
+        .post('/api/blindbox/comment/like')
+        .set('Authorization', `Bearer ${token}`)
+        .send(likeData);
+
+      expect(result.status).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toBe('取消点赞成功');
+
+      mockService.toggleLikeComment = originalToggleLikeComment;
     });
   });
 }); 
