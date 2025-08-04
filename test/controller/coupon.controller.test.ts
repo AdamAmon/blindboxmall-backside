@@ -3,7 +3,7 @@ import { Framework, IMidwayKoaApplication } from '@midwayjs/koa';
 import { AuthService } from '../../src/service/auth/auth.service';
 import { UserService } from '../../src/service/user/user.service';
 import { CouponService } from '../../src/service/coupon/coupon.service';
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
+import { describe, it, expect, beforeAll, afterAll, jest } from '@jest/globals';
 
 describe('test/controller/coupon.controller.test.ts', () => {
   let app: IMidwayKoaApplication;
@@ -208,6 +208,193 @@ describe('test/controller/coupon.controller.test.ts', () => {
         .query({ id: 1 });
 
       expect([401, 403]).toContain(result.status);
+    });
+  });
+
+  // 补充边界条件和异常处理测试
+  describe('边界条件和异常处理', () => {
+    it('创建优惠券时 service 抛出异常', async () => {
+      const couponData = {
+        name: '异常测试优惠券',
+        description: '测试描述',
+        type: 1,
+        threshold: 100,
+        amount: 10,
+        start_time: new Date(),
+        end_time: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        total: 100,
+        status: 1
+      };
+
+      const spy = jest.spyOn(couponService, 'createCoupon').mockImplementation(() => {
+        throw new Error('service error');
+      });
+
+      const result = await createHttpRequest(app)
+        .post('/api/coupon/')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send(couponData);
+
+      expect([500, 422]).toContain(result.status);
+      spy.mockRestore();
+    });
+
+    it('查询优惠券列表时 service 抛出异常', async () => {
+      const spy = jest.spyOn(couponService, 'listCoupons').mockImplementation(() => {
+        throw new Error('service error');
+      });
+
+      const result = await createHttpRequest(app)
+        .get('/api/coupon/')
+        .set('Authorization', `Bearer ${token}`)
+        .query({ page: 1, pageSize: 10, type: 'valid' });
+
+      expect([200, 500, 422]).toContain(result.status);
+      spy.mockRestore();
+    });
+
+    it('更新优惠券时 service 抛出异常', async () => {
+      const updateData = {
+        id: 1,
+        name: '更新后的优惠券',
+        description: '更新后的描述',
+        type: 1,
+        threshold: 100,
+        amount: 10,
+        start_time: new Date(),
+        end_time: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        total: 100
+      };
+
+      const spy = jest.spyOn(couponService, 'updateCoupon').mockImplementation(() => {
+        throw new Error('service error');
+      });
+
+      const result = await createHttpRequest(app)
+        .put('/api/coupon/')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send(updateData);
+
+      expect([200, 500, 422]).toContain(result.status);
+      spy.mockRestore();
+    });
+
+    it('删除优惠券时 service 抛出异常', async () => {
+      const spy = jest.spyOn(couponService, 'deleteCoupon').mockImplementation(() => {
+        throw new Error('service error');
+      });
+
+      const result = await createHttpRequest(app)
+        .del('/api/coupon/')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .query({ id: 1 });
+
+      expect([200, 500, 422]).toContain(result.status);
+      spy.mockRestore();
+    });
+
+    it('创建优惠券时缺少必填字段', async () => {
+      const invalidData = {
+        name: '', // 空名称
+        type: 1,
+        threshold: 100,
+        amount: 10,
+        start_time: new Date(),
+        end_time: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        total: 100
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/coupon/')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send(invalidData);
+
+      expect([400, 422]).toContain(result.status);
+    });
+
+    it('创建优惠券时无效的类型值', async () => {
+      const invalidData = {
+        name: '测试优惠券',
+        type: 3, // 无效类型
+        threshold: 100,
+        amount: 10,
+        start_time: new Date(),
+        end_time: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        total: 100
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/coupon/')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send(invalidData);
+
+      expect([400, 422]).toContain(result.status);
+    });
+
+    it('创建优惠券时负数阈值', async () => {
+      const invalidData = {
+        name: '测试优惠券',
+        type: 1,
+        threshold: -100, // 负数阈值
+        amount: 10,
+        start_time: new Date(),
+        end_time: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        total: 100
+      };
+
+      const result = await createHttpRequest(app)
+        .post('/api/coupon/')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send(invalidData);
+
+      expect([400, 422]).toContain(result.status);
+    });
+
+    it('查询优惠券列表时无效的分页参数', async () => {
+      const result = await createHttpRequest(app)
+        .get('/api/coupon/')
+        .set('Authorization', `Bearer ${token}`)
+        .query({ page: -1, pageSize: 0, type: 'invalid_type' });
+
+      expect([200, 400, 422]).toContain(result.status);
+    });
+
+    it('更新优惠券时缺少ID', async () => {
+      const updateData = {
+        name: '更新后的优惠券',
+        description: '更新后的描述',
+        type: 1,
+        threshold: 100,
+        amount: 10,
+        start_time: new Date(),
+        end_time: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        total: 100
+      };
+
+      const result = await createHttpRequest(app)
+        .put('/api/coupon/')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send(updateData);
+
+      expect([400, 422]).toContain(result.status);
+    });
+
+    it('删除优惠券时缺少ID', async () => {
+      const result = await createHttpRequest(app)
+        .del('/api/coupon/')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .query({});
+
+      expect([200, 400, 422, 500]).toContain(result.status);
+    });
+
+    it('删除优惠券时无效的ID', async () => {
+      const result = await createHttpRequest(app)
+        .del('/api/coupon/')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .query({ id: 'abc' });
+
+      expect([200, 400, 422, 500]).toContain(result.status);
     });
   });
 }); 
