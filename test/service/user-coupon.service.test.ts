@@ -658,6 +658,7 @@ describe('test/service/user-coupon.service.test.ts', () => {
       const mockQueryBuilder = {
         leftJoinAndSelect: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
         getMany: jest.fn().mockRejectedValue(new Error('Database error'))
       };
       
@@ -753,6 +754,7 @@ describe('test/service/user-coupon.service.test.ts', () => {
       const mockQueryBuilder = {
         leftJoinAndSelect: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
         getMany: jest.fn().mockResolvedValue([])
       };
       
@@ -909,6 +911,7 @@ describe('test/service/user-coupon.service.test.ts', () => {
       const mockQueryBuilder = {
         leftJoinAndSelect: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
         getMany: jest.fn().mockRejectedValue(new Error('getMany error')),
       };
       const originalCreateQueryBuilder = userCouponService.userCouponRepo.createQueryBuilder;
@@ -920,21 +923,22 @@ describe('test/service/user-coupon.service.test.ts', () => {
       }
     });
 
-    it('should handle cleanExpiredUserCoupons delete throws error', async () => {
+    it('should handle cleanExpiredUserCoupons update throws error', async () => {
       const mockQueryBuilder = {
         leftJoinAndSelect: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
         getMany: jest.fn().mockResolvedValue([{ id: 1 }]),
       };
       const originalCreateQueryBuilder = userCouponService.userCouponRepo.createQueryBuilder;
-      const originalDelete = userCouponService.userCouponRepo.delete;
+      const originalUpdate = userCouponService.userCouponRepo.update;
       userCouponService.userCouponRepo.createQueryBuilder = jest.fn().mockReturnValue(mockQueryBuilder);
-      userCouponService.userCouponRepo.delete = jest.fn().mockRejectedValue(new Error('delete error'));
+      userCouponService.userCouponRepo.update = jest.fn().mockRejectedValue(new Error('update error'));
       try {
-        await expect(userCouponService.cleanExpiredUserCoupons()).rejects.toThrow('delete error');
+        await expect(userCouponService.cleanExpiredUserCoupons()).rejects.toThrow('update error');
       } finally {
         userCouponService.userCouponRepo.createQueryBuilder = originalCreateQueryBuilder;
-        userCouponService.userCouponRepo.delete = originalDelete;
+        userCouponService.userCouponRepo.update = originalUpdate;
       }
     });
   });

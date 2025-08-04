@@ -113,15 +113,21 @@ export class UserCouponService {
   // 自动清理所有已过期的用户优惠券
   async cleanExpiredUserCoupons() {
     const now = new Date();
-    // left join coupon，删除所有 coupon.end_time < now 的 user_coupon
+    // 查找所有已过期的用户优惠券
     const expiredUserCoupons = await this.userCouponRepo
       .createQueryBuilder('userCoupon')
       .leftJoinAndSelect('userCoupon.coupon', 'coupon')
       .where('coupon.end_time < :now', { now })
+      .andWhere('userCoupon.status = :status', { status: 0 }) // 只处理未使用的优惠券
       .getMany();
+    
+    // 批量更新为已过期状态，而不是删除
     if (expiredUserCoupons.length > 0) {
       const ids = expiredUserCoupons.map(c => c.id);
-      await this.userCouponRepo.delete(ids);
+      await this.userCouponRepo.update(ids, { 
+        status: 2, 
+        expired_at: now 
+      });
     }
     return expiredUserCoupons.length;
   }
