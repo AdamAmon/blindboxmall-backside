@@ -28,7 +28,8 @@ import { PlayerShowCommentLike } from './entity/community/player-show-comment-li
 import * as staticFile from '@midwayjs/static-file';
 import { Coupon } from './entity/coupon/coupon.entity';
 import { UserCoupon } from './entity/coupon/user-coupon.entity';
-
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Configuration({
   imports: [
@@ -56,6 +57,22 @@ export class MainConfiguration {
     this.app.useMiddleware([ReportMiddleware, AuthMiddleware]);
     // 添加全局错误过滤器
     this.app.useFilter([DefaultErrorFilter]);
+    // 移除onReady中的fallback中间件
+  }
+
+  async onServerReady() {
+    // 兜底history fallback，兼容SPA前端路由
+    this.app.use(async (ctx, next) => {
+      await next();
+      if (
+        ctx.status === 404 &&
+        ctx.method === 'GET' &&
+        !ctx.path.startsWith('/api')
+      ) {
+        ctx.type = 'html';
+        ctx.body = fs.readFileSync(path.join(__dirname, '../public/index.html'));
+      }
+    });
   }
 }
 // TypeORM实体注册

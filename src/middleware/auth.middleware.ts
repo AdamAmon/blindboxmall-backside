@@ -7,7 +7,13 @@ export class AuthMiddleware {
   resolve() {
     return async (ctx: Context, next: NextFunction) => {
       
-      // 排除不需要认证的路由
+      // 只拦截 /api 开头的接口
+      if (!ctx.path.startsWith('/api')) {
+        await next();
+        return;
+      }
+
+      // 需要放行的API白名单
       const noAuthPaths = [
         '/api/auth/login',
         '/api/auth/register',
@@ -15,7 +21,6 @@ export class AuthMiddleware {
         '/api/pay/order/notify', // 新增，允许订单支付回调无需鉴权
         '/api/blindbox/test', // 添加测试路径
         '/api/blindbox/debug', // 添加调试路径
-        '/api/blindbox', // 盲盒列表查询（公开接口）
         '/api/blindbox/categories', // 分类统计（公开接口）
         '/api/blindbox/hot-keywords', // 热门关键词（公开接口）
         '/api/blindbox/comment/list', // 评论列表查询（公开接口）
@@ -26,9 +31,10 @@ export class AuthMiddleware {
         '/api/coupon', // 优惠券列表（公开接口）
         '/api/user-coupon/clean-expired', // 清理过期优惠券（系统维护接口）
         '/api/user-coupon/stats', // 优惠券统计信息（系统维护接口）
+
       ];
-      
-      if (noAuthPaths.includes(ctx.path)) {
+      // 支持精确和前缀匹配
+      if (noAuthPaths.some(path => ctx.path === path || ctx.path.startsWith(path + '/'))) {
         await next();
         return;
       }

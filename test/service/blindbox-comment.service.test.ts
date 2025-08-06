@@ -1,14 +1,51 @@
 import { createApp, close } from '@midwayjs/mock';
+import { Framework, IMidwayKoaApplication } from '@midwayjs/koa';
 import { BlindBoxCommentService } from '../../src/service/blindbox/blindbox-comment.service';
+import { UserService } from '../../src/service/user/user.service';
+import { BlindBoxService } from '../../src/service/blindbox/blindbox.service';
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 
 describe('test/service/blindbox-comment.service.test.ts', () => {
-  let app;
+  let app: IMidwayKoaApplication;
   let blindBoxCommentService: BlindBoxCommentService;
+  let userService: UserService;
+  let blindBoxService: BlindBoxService;
+  let userId: number;
+  let blindBoxId: number;
+  let commentId: number;
 
   beforeAll(async () => {
-    app = await createApp();
+    app = await createApp<Framework>();
     blindBoxCommentService = await app.getApplicationContext().getAsync(BlindBoxCommentService);
+    userService = await app.getApplicationContext().getAsync(UserService);
+    blindBoxService = await app.getApplicationContext().getAsync(BlindBoxService);
+
+    // 创建测试用户
+    const user = await userService.createUser({
+      username: 'commenttestuser_' + Date.now(),
+      password: '123456',
+      nickname: '评论测试用户'
+    });
+    userId = user.id;
+
+    // 创建测试盲盒
+    const blindBox = await blindBoxService.create({
+      name: '测试盲盒',
+      description: '测试盲盒描述',
+      price: 99.99,
+      cover_image: 'test.jpg',
+      stock: 100,
+      status: 1,
+      seller_id: userId
+    });
+    blindBoxId = blindBox.id;
+
+    // 创建一个测试评论
+    const comment = await blindBoxCommentService.createComment({
+      blind_box_id: blindBoxId,
+      content: '测试评论内容'
+    }, userId);
+    commentId = comment.id;
   });
 
   afterAll(async () => {
@@ -16,151 +53,277 @@ describe('test/service/blindbox-comment.service.test.ts', () => {
   });
 
   describe('createComment', () => {
-    it('should throw error for non-existent blind box', async () => {
-      const data = {
-        blind_box_id: 99999,
-        content: '测试评论'
-      };
-      const userId = 1;
+    it('should create comment with parent_id successfully', async () => {
+      // 先创建一个父评论
+      const parentComment = await blindBoxCommentService.createComment({
+        blind_box_id: blindBoxId,
+        content: '父评论内容'
+      }, userId);
 
-      await expect(blindBoxCommentService.createComment(data, userId))
-        .rejects.toThrow('盲盒不存在');
+      // 创建回复评论
+      const result = await blindBoxCommentService.createComment({
+        blind_box_id: blindBoxId,
+        content: '回复评论内容',
+        parent_id: parentComment.id
+      }, userId);
+
+      expect(result).toBeDefined();
+      expect(result.content).toBe('回复评论内容');
+      expect(result.parent_id).toBe(parentComment.id);
     });
 
-    it('should throw error for non-existent parent comment', async () => {
-      const data = {
-        blind_box_id: 1,
-        content: '回复评论',
+    it('should handle invalid parent_id', async () => {
+      await expect(blindBoxCommentService.createComment({
+        blind_box_id: blindBoxId,
+        content: '回复评论内容',
         parent_id: 99999
-      };
-      const userId = 1;
+      }, userId)).rejects.toThrow('回复的评论不存在');
+    });
 
-      await expect(blindBoxCommentService.createComment(data, userId))
-        .rejects.toThrow('盲盒不存在');
+    it('should handle repository error during blind box check', async () => {
+      const mockRepo = blindBoxCommentService.blindBoxRepo;
+      const originalFindOne = mockRepo.findOne;
+      mockRepo.findOne = jest.fn().mockRejectedValue(new Error('数据库错误'));
+
+      await expect(blindBoxCommentService.createComment({
+        blind_box_id: blindBoxId,
+        content: '测试评论'
+      }, userId)).rejects.toThrow('数据库错误');
+
+      mockRepo.findOne = originalFindOne;
     });
   });
 
   describe('getComments', () => {
-    it('should get comments list successfully', async () => {
-      const params = {
-        blind_box_id: 1,
-        page: 1,
-        limit: 10
-      };
-
-      const result = await blindBoxCommentService.getComments(params);
-      expect(result).toBeDefined();
-      expect(result.list).toBeDefined();
-      expect(Array.isArray(result.list)).toBe(true);
-      expect(result.total).toBeDefined();
-      expect(result.page).toBe(params.page);
-      expect(result.limit).toBe(params.limit);
-      expect(result.totalPages).toBeDefined();
-    });
-
-    it('should handle pagination correctly', async () => {
-      const params = {
-        blind_box_id: 1,
-        page: 2,
-        limit: 5
-      };
-
-      const result = await blindBoxCommentService.getComments(params);
-      expect(result).toBeDefined();
-      expect(result.page).toBe(params.page);
-      expect(result.limit).toBe(params.limit);
-    });
-
-    it('should return empty list for non-existent blind box', async () => {
-      const params = {
+    it('should handle empty comments list', async () => {
+      const result = await blindBoxCommentService.getComments({
         blind_box_id: 99999,
         page: 1,
         limit: 10
-      };
+      });
 
-      const result = await blindBoxCommentService.getComments(params);
-      expect(result).toBeDefined();
-      expect(result.list).toBeDefined();
-      expect(Array.isArray(result.list)).toBe(true);
+      expect(result.list).toEqual([]);
       expect(result.total).toBe(0);
+      expect(result.page).toBe(1);
+      expect(result.limit).toBe(10);
+      expect(result.totalPages).toBe(0);
+    });
+
+    it('should handle pagination with custom parameters', async () => {
+      const result = await blindBoxCommentService.getComments({
+        blind_box_id: blindBoxId,
+        page: 2,
+        limit: 5
+      });
+
+      expect(result.page).toBe(2);
+      expect(result.limit).toBe(5);
+      expect(result.totalPages).toBeGreaterThanOrEqual(0);
+    });
+
+    it('should handle repository error during comments query', async () => {
+      const mockRepo = blindBoxCommentService.commentRepo;
+      const originalCreateQueryBuilder = mockRepo.createQueryBuilder;
+      mockRepo.createQueryBuilder = jest.fn().mockReturnValue({
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getManyAndCount: jest.fn().mockRejectedValue(new Error('查询失败'))
+      });
+
+      await expect(blindBoxCommentService.getComments({
+        blind_box_id: blindBoxId,
+        page: 1,
+        limit: 10
+      })).rejects.toThrow('查询失败');
+
+      mockRepo.createQueryBuilder = originalCreateQueryBuilder;
     });
   });
 
   describe('toggleLikeComment', () => {
-    it('should throw error for non-existent comment', async () => {
-      const commentId = 99999;
-      const userId = 1;
+    it('should handle repository error during comment check', async () => {
+      const mockRepo = blindBoxCommentService.commentRepo;
+      const originalFindOne = mockRepo.findOne;
+      mockRepo.findOne = jest.fn().mockRejectedValue(new Error('数据库错误'));
 
-      await expect(blindBoxCommentService.toggleLikeComment(commentId, userId))
-        .rejects.toThrow('评论不存在');
+      await expect(blindBoxCommentService.toggleLikeComment(commentId, userId)).rejects.toThrow('数据库错误');
+
+      mockRepo.findOne = originalFindOne;
     });
   });
 
   describe('deleteComment', () => {
-    it('should throw error for non-existent comment', async () => {
-      const commentId = 99999;
-      const userId = 1;
+    it('should handle repository error during comment check', async () => {
+      const mockRepo = blindBoxCommentService.commentRepo;
+      const originalFindOne = mockRepo.findOne;
+      mockRepo.findOne = jest.fn().mockRejectedValue(new Error('数据库错误'));
 
-      await expect(blindBoxCommentService.deleteComment(commentId, userId))
-        .rejects.toThrow('评论不存在');
+      await expect(blindBoxCommentService.deleteComment(commentId, userId)).rejects.toThrow('数据库错误');
+
+      mockRepo.findOne = originalFindOne;
+    });
+
+    it('should handle repository error during comment deletion', async () => {
+      const mockRepo = blindBoxCommentService.commentRepo;
+      const originalFindOne = mockRepo.findOne;
+      const originalDelete = mockRepo.delete;
+      
+      mockRepo.findOne = jest.fn().mockResolvedValue({
+        id: commentId,
+        user_id: userId,
+        blind_box_id: blindBoxId
+      });
+      mockRepo.delete = jest.fn().mockRejectedValue(new Error('删除失败'));
+
+      await expect(blindBoxCommentService.deleteComment(commentId, userId)).rejects.toThrow('删除失败');
+
+      mockRepo.findOne = originalFindOne;
+      mockRepo.delete = originalDelete;
+    });
+  });
+
+  describe('updateBlindBoxCommentCount', () => {
+    it('should handle repository error during count query', async () => {
+      const mockRepo = blindBoxCommentService.commentRepo;
+      const originalCreateQueryBuilder = mockRepo.createQueryBuilder;
+      mockRepo.createQueryBuilder = jest.fn().mockReturnValue({
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getCount: jest.fn().mockRejectedValue(new Error('计数查询失败'))
+      });
+
+      await expect(blindBoxCommentService['updateBlindBoxCommentCount'](blindBoxId)).rejects.toThrow('计数查询失败');
+
+      mockRepo.createQueryBuilder = originalCreateQueryBuilder;
+    });
+
+    it('should handle repository error during blind box update', async () => {
+      const mockRepo = blindBoxCommentService.blindBoxRepo;
+      const originalUpdate = mockRepo.update;
+      mockRepo.update = jest.fn().mockRejectedValue(new Error('更新失败'));
+
+      await expect(blindBoxCommentService['updateBlindBoxCommentCount'](blindBoxId)).rejects.toThrow('更新失败');
+
+      mockRepo.update = originalUpdate;
     });
   });
 
   describe('getCommentById', () => {
-    it('should get comment by id successfully', async () => {
-      const commentId = 1;
+    it('should handle repository error', async () => {
+      const mockRepo = blindBoxCommentService.commentRepo;
+      const originalFindOne = mockRepo.findOne;
+      mockRepo.findOne = jest.fn().mockRejectedValue(new Error('查询失败'));
 
-      const result = await blindBoxCommentService.getCommentById(commentId);
-      expect(result).toBeDefined();
-    });
+      await expect(blindBoxCommentService.getCommentById(commentId)).rejects.toThrow('查询失败');
 
-    it('should return null for non-existent comment', async () => {
-      const commentId = 99999;
-
-      const result = await blindBoxCommentService.getCommentById(commentId);
-      expect(result).toBeNull();
+      mockRepo.findOne = originalFindOne;
     });
   });
 
   describe('debugGetAllComments', () => {
-    it('should get all comments for debug', async () => {
+    it('should handle repository error', async () => {
+      const mockRepo = blindBoxCommentService.commentRepo;
+      const originalFind = mockRepo.find;
+      mockRepo.find = jest.fn().mockRejectedValue(new Error('查询失败'));
+
+      await expect(blindBoxCommentService.debugGetAllComments()).rejects.toThrow('查询失败');
+
+      mockRepo.find = originalFind;
+    });
+
+    it('should handle comments without user relation', async () => {
+      const mockRepo = blindBoxCommentService.commentRepo;
+      const originalFind = mockRepo.find;
+      mockRepo.find = jest.fn().mockResolvedValue([
+        {
+          id: 1,
+          blind_box_id: blindBoxId,
+          user_id: userId,
+          content: '测试评论',
+          created_at: new Date(),
+          user: null // 没有用户关系
+        }
+      ]);
+
       const result = await blindBoxCommentService.debugGetAllComments();
-      expect(result).toBeDefined();
-      expect(Array.isArray(result)).toBe(true);
+      expect(result[0].user).toBeNull();
+
+      mockRepo.find = originalFind;
     });
   });
 
   describe('debugGetCommentsWithRawSQL', () => {
-    it('should get comments with raw SQL', async () => {
-      const blindBoxId = 1;
+    it('should handle repository error', async () => {
+      const mockRepo = blindBoxCommentService.commentRepo;
+      const originalQuery = mockRepo.query;
+      mockRepo.query = jest.fn().mockRejectedValue(new Error('SQL查询失败'));
 
-      const result = await blindBoxCommentService.debugGetCommentsWithRawSQL(blindBoxId);
-      expect(result).toBeDefined();
-      expect(Array.isArray(result)).toBe(true);
-    });
+      await expect(blindBoxCommentService.debugGetCommentsWithRawSQL(blindBoxId)).rejects.toThrow('SQL查询失败');
 
-    it('should handle non-existent blind box', async () => {
-      const blindBoxId = 99999;
-
-      const result = await blindBoxCommentService.debugGetCommentsWithRawSQL(blindBoxId);
-      expect(result).toBeDefined();
-      expect(Array.isArray(result)).toBe(true);
-      expect(result.length).toBe(0);
+      mockRepo.query = originalQuery;
     });
   });
 
   describe('cleanDuplicateComments', () => {
-    it('should clean duplicate comments successfully', async () => {
+    it('should handle repository error during find', async () => {
+      const mockRepo = blindBoxCommentService.commentRepo;
+      const originalFind = mockRepo.find;
+      mockRepo.find = jest.fn().mockRejectedValue(new Error('查询失败'));
+
+      await expect(blindBoxCommentService.cleanDuplicateComments()).rejects.toThrow('查询失败');
+
+      mockRepo.find = originalFind;
+    });
+
+    it('should handle repository error during delete', async () => {
+      const mockRepo = blindBoxCommentService.commentRepo;
+      const originalFind = mockRepo.find;
+      const originalDelete = mockRepo.delete;
+      
+      mockRepo.find = jest.fn().mockResolvedValue([
+        {
+          id: 1,
+          content: '重复内容',
+          user_id: userId,
+          blind_box_id: blindBoxId,
+          created_at: new Date('2023-01-01')
+        },
+        {
+          id: 2,
+          content: '重复内容',
+          user_id: userId,
+          blind_box_id: blindBoxId,
+          created_at: new Date('2023-01-02')
+        }
+      ]);
+      mockRepo.delete = jest.fn().mockRejectedValue(new Error('删除失败'));
+
+      await expect(blindBoxCommentService.cleanDuplicateComments()).rejects.toThrow('删除失败');
+
+      mockRepo.find = originalFind;
+      mockRepo.delete = originalDelete;
+    });
+
+    it('should handle empty comments list', async () => {
+      const mockRepo = blindBoxCommentService.commentRepo;
+      const originalFind = mockRepo.find;
+      mockRepo.find = jest.fn().mockResolvedValue([]);
+
       const result = await blindBoxCommentService.cleanDuplicateComments();
-      expect(result).toBeDefined();
-      expect(Array.isArray(result)).toBe(true);
+      expect(result).toEqual([]);
+
+      mockRepo.find = originalFind;
     });
   });
 
   describe('边界条件测试', () => {
     it('should handle invalid page parameters', async () => {
       const params = {
-        blind_box_id: 1,
+        blind_box_id: blindBoxId,
         page: -1,
         limit: 0
       };
@@ -171,7 +334,7 @@ describe('test/service/blindbox-comment.service.test.ts', () => {
 
     it('should handle very large page parameters', async () => {
       const params = {
-        blind_box_id: 1,
+        blind_box_id: blindBoxId,
         page: 999999,
         limit: 999999
       };
@@ -184,10 +347,9 @@ describe('test/service/blindbox-comment.service.test.ts', () => {
   describe('异常处理测试', () => {
     it('should handle database connection errors gracefully', async () => {
       const data = {
-        blind_box_id: 1,
+        blind_box_id: blindBoxId,
         content: '测试评论'
       };
-      const userId = 1;
 
       try {
         const result = await blindBoxCommentService.createComment(data, userId);

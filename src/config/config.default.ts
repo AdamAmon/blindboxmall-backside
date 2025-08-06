@@ -52,9 +52,11 @@ export default {
     // 新增：所有支付相关接口userId默认取当前登录用户
     defaultUserIdFromToken: true,
   },
-  // staticFile: {
-  //   dirs: {
-  //     default: { prefix: '/', dir: 'public' } // 前端构建产物目录
-  //   }
-  // },
+  staticFile: {
+    dirs: {
+      default: { prefix: '/', dir: 'public' } // 前端构建产物目录
+    },
+    dynamic: true,
+    historyApiFallback: true
+  },
 } as MidwayConfig;
