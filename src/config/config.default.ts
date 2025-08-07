@@ -45,7 +45,7 @@ export default {
         ? 'test-public-key'
         : fs.readFileSync(path.join(__dirname, '../../public_key.pem'), 'utf8'),
     gateway: 'https://openapi-sandbox.dl.alipaydev.com/gateway.do',
-    notifyUrl: 'http://h45a9876.natappfree.cc/api/pay/notify',
+    notifyUrl: process.env.ALIPAY_NOTIFY_URL || '	http://s93eb489.natappfree.cc/api/pay/notify',//开发环境还是采用内网穿透方案，直接使用本地地址支付宝沙箱无法访问本地服务器
     charset: 'utf-8',
     signType: 'RSA2',
     keyType: 'PKCS8',
