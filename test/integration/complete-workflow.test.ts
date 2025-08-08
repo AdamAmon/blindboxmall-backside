@@ -231,7 +231,7 @@ describe('完整业务流程集成测试', () => {
     it('应该测试所有主要API端点', async () => {
       // 1. 首页
       const homeResult = await createHttpRequest(app).get('/');
-      expect([200, 401]).toContain(homeResult.status);
+      expect([302, 200, 401]).toContain(homeResult.status);
 
       // 2. 健康检查（如果有的话）
       const healthResult = await createHttpRequest(app).get('/health');

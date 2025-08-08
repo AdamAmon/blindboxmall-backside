@@ -1,4 +1,5 @@
 import { Controller, Get } from '@midwayjs/core';
+import { Context } from '@midwayjs/koa';
 
 @Controller('/')
 export class HomeController {
@@ -10,8 +11,10 @@ export class HomeController {
       // 或者根据实际需求返回模拟数据
     };
   }
+  
   @Get('/')
-  async home(): Promise<string> {
-    return 'Hello Midwayjs!';
+  async home(ctx: Context): Promise<void> {
+    // 直接重定向到登录页面
+    ctx.redirect('/login');
   }
 }

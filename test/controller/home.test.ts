@@ -40,17 +40,22 @@ describe('test/controller/home.test.ts', () => {
   it('should GET / without authentication', async () => {
     const result = await createHttpRequest(app).get('/');
 
-    // 由于静态文件目录问题，可能返回500，调整期望
-    expect([200, 401, 500]).toContain(result.status);
-    if (result.status === 200) {
+    // 首页现在会重定向到登录页面，返回302状态码
+    expect([302, 200, 401, 500]).toContain(result.status);
+    if (result.status === 302) {
+      // 重定向到登录页面
+      expect(result.headers.location).toBe('/login');
+    } else if (result.status === 200) {
       expect(result.text).toBe('Hello Midwayjs!');
     } else if (result.status === 401) {
       // 添加认证令牌重试
       const authedResult = await createHttpRequest(app)
         .get('/')
         .set('Authorization', `Bearer ${token}`);
-      expect([200, 500]).toContain(authedResult.status);
-      if (authedResult.status === 200) {
+      expect([302, 200, 500]).toContain(authedResult.status);
+      if (authedResult.status === 302) {
+        expect(authedResult.headers.location).toBe('/login');
+      } else if (authedResult.status === 200) {
         expect(authedResult.text).toBe('Hello Midwayjs!');
       }
     }
