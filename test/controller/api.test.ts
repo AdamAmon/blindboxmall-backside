@@ -136,4 +136,73 @@ describe('test/controller/api.test.ts', () => {
     expect([404, 500]).toContain(result.status);
   });
 
+  describe('GET /api/health', () => {
+    it('should return health status without authentication', async () => {
+      const result = await createHttpRequest(app).get('/api/health');
+      
+      expect(result.status).toBe(200);
+      expect(result.body).toHaveProperty('success', true);
+      expect(result.body).toHaveProperty('message', 'OK');
+      expect(result.body).toHaveProperty('data');
+      expect(result.body.data).toHaveProperty('status', 'healthy');
+      expect(result.body.data).toHaveProperty('timestamp');
+      expect(result.body.data).toHaveProperty('environment');
+      expect(typeof result.body.data.timestamp).toBe('string');
+      expect(['local', 'unittest', 'production']).toContain(result.body.data.environment);
+    });
+
+    it('should return health status with authentication', async () => {
+      const result = await createHttpRequest(app)
+        .get('/api/health')
+        .set('Authorization', `Bearer ${token}`);
+      
+      expect(result.status).toBe(200);
+      expect(result.body).toHaveProperty('success', true);
+      expect(result.body).toHaveProperty('message', 'OK');
+      expect(result.body).toHaveProperty('data');
+      expect(result.body.data).toHaveProperty('status', 'healthy');
+    });
+
+    it('should handle health check with different environment variables', async () => {
+      // 测试不同环境变量的情况
+      const originalEnv = process.env.NODE_ENV;
+      
+      try {
+        // 测试生产环境
+        process.env.NODE_ENV = 'production';
+        const prodResult = await createHttpRequest(app).get('/api/health');
+        expect(prodResult.status).toBe(200);
+        expect(prodResult.body.data.environment).toBe('production');
+        
+        // 测试本地环境
+        process.env.NODE_ENV = 'local';
+        const localResult = await createHttpRequest(app).get('/api/health');
+        expect(localResult.status).toBe(200);
+        expect(localResult.body.data.environment).toBe('local');
+        
+        // 测试未设置环境变量的情况（应该返回'local'）
+        delete process.env.NODE_ENV;
+        const defaultResult = await createHttpRequest(app).get('/api/health');
+        expect(defaultResult.status).toBe(200);
+        expect(defaultResult.body.data.environment).toBe('local');
+        
+        // 测试空字符串环境变量
+        process.env.NODE_ENV = '';
+        const emptyResult = await createHttpRequest(app).get('/api/health');
+        expect(emptyResult.status).toBe(200);
+        expect(emptyResult.body.data.environment).toBe('local');
+        
+        // 测试undefined环境变量
+        process.env.NODE_ENV = undefined;
+        const undefinedResult = await createHttpRequest(app).get('/api/health');
+        expect(undefinedResult.status).toBe(200);
+        expect(undefinedResult.body.data.environment).toBe('undefined');
+        
+      } finally {
+        // 恢复原始环境变量
+        process.env.NODE_ENV = originalEnv;
+      }
+    });
+  });
+
 });
