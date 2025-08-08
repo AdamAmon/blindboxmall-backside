@@ -98,4 +98,31 @@ export class OrderController {
       return 'fail';
     }
   }
+
+  // Docker环境模拟订单支付成功端点
+  @Get('/mock-success')
+  async mockOrderSuccess(@Query('out_trade_no') outTradeNo: string, @Query('amount') amount: string) {
+    try {
+      console.log('[Docker环境] 模拟订单支付成功回调:', { outTradeNo, amount });
+      
+      // 构造模拟的支付宝回调参数
+      const mockParams = `out_trade_no=${outTradeNo}&trade_no=MOCK${Date.now()}&trade_status=TRADE_SUCCESS&total_amount=${amount}`;
+      
+      await this.orderService.handleAlipayNotify(mockParams);
+      
+      return {
+        success: true,
+        message: '模拟订单支付成功',
+        data: {
+          out_trade_no: outTradeNo,
+          trade_no: `MOCK${Date.now()}`,
+          trade_status: 'TRADE_SUCCESS',
+          total_amount: amount
+        }
+      };
+    } catch (error) {
+      console.error('[Docker环境] 模拟订单支付成功处理失败:', error);
+      throw error;
+    }
+  }
 } 

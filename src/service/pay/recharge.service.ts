@@ -94,7 +94,26 @@ export class RechargeService {
         }
       }, 600000);
       // console.log('[调试] createRechargeOrder 订单记录:', record);
-      // 生成支付宝支付链接
+      
+      // 检查是否为Docker部署环境
+      const isDockerEnv = process.env.NODE_ENV === 'local' && process.env.DOCKER_ENV === 'true';
+      
+      if (isDockerEnv) {
+        // Docker部署环境：直接模拟支付成功
+        console.log('[Docker环境] 充值订单直接模拟支付成功:', outTradeNo);
+        
+        // 模拟支付成功回调
+        setTimeout(async () => {
+          await this.handleAlipayNotify(`out_trade_no=${outTradeNo}&trade_no=MOCK${Date.now()}&trade_status=TRADE_SUCCESS`);
+        }, 1000); // 1秒后模拟支付成功
+        
+        return { 
+          record, 
+          payUrl: `http://localhost:7001/api/pay/mock-success?out_trade_no=${outTradeNo}&amount=${amount.toFixed(2)}` 
+        };
+      }
+      
+      // 本地开发环境：使用支付宝沙箱
       let alipaySdk;
       try {
         alipaySdk = this.getAlipaySdk();

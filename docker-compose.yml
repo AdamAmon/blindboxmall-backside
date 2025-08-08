@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  blindboxmall:
+    build: .
+    container_name: blindboxmall-app
+    ports:
+      - "7001:7001"
+    environment:
+      - NODE_ENV=local
+      - PORT=7001
+      - JWT_SECRET=dev-secret-key
+      - DOCKER_ENV=true
+    volumes:
+      # 挂载源代码，支持热重载
+      - .:/app
+      - /app/node_modules
+      # 挂载数据库文件，确保数据持久化
+      - ./data.sqlite:/app/data.sqlite
+      # 挂载日志目录
+      - ./logs:/app/logs
+      # 挂载支付宝密钥文件
+      - ./private_key.pem:/app/private_key.pem
+      - ./public_key.pem:/app/public_key.pem
+    networks:
+      - blindboxmall-network
+    restart: unless-stopped
+    # 健康检查
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:7001/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  blindboxmall-network:
+    driver: bridge 

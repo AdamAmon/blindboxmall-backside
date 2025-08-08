@@ -15,10 +15,13 @@ export class AuthMiddleware {
 
       // 需要放行的API白名单
       const noAuthPaths = [
+        '/api/health',
         '/api/auth/login',
         '/api/auth/register',
         '/api/pay/notify',
         '/api/pay/order/notify', // 新增，允许订单支付回调无需鉴权
+        '/api/pay/mock-success', // Docker环境模拟充值支付成功
+        '/api/pay/order/mock-success', // Docker环境模拟订单支付成功
         '/api/blindbox/test', // 添加测试路径
         '/api/blindbox/debug', // 添加调试路径
         '/api/blindbox/categories', // 分类统计（公开接口）

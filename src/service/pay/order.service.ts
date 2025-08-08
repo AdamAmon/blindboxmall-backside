@@ -232,7 +232,26 @@ export class OrderService {
     }
     // 支付宝支付
     if (order.pay_method === 'alipay') {
-      // 生成支付宝支付链接
+      // 检查是否为Docker部署环境
+      const isDockerEnv = process.env.NODE_ENV === 'local' && process.env.DOCKER_ENV === 'true';
+      
+      if (isDockerEnv) {
+        // Docker部署环境：直接模拟支付成功
+        console.log('[Docker环境] 订单支付直接模拟支付成功:', order.id);
+        
+        // 模拟支付成功回调
+        setTimeout(async () => {
+          await this.handleAlipayNotify(`out_trade_no=${order.out_trade_no}&trade_no=MOCK${Date.now()}&trade_status=TRADE_SUCCESS`);
+        }, 1000); // 1秒后模拟支付成功
+        
+        return { 
+          success: true, 
+          pay_method: 'alipay', 
+          payUrl: `http://localhost:7001/api/pay/order/mock-success?out_trade_no=${order.out_trade_no}&amount=${Number(order.total_amount).toFixed(2)}` 
+        };
+      }
+      
+      // 本地开发环境：使用支付宝沙箱
       let outTradeNo = order.out_trade_no;
       if (!outTradeNo) {
         outTradeNo = 'ORDER' + Date.now() + Math.floor(Math.random() * 10000);

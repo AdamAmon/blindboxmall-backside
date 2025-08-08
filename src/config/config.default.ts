@@ -36,14 +36,28 @@ export default {
     privateKey:
       process.env.NODE_ENV === 'unittest'
         ? 'test-private-key'
-        : fs.readFileSync(
-            path.join(__dirname, '../../private_key.pem'),
-            'utf8'
-          ),
+        : (() => {
+            try {
+              return fs.readFileSync(
+                path.join(__dirname, '../../private_key.pem'),
+                'utf8'
+              );
+            } catch (error) {
+              console.warn('支付宝私钥文件不存在，使用默认测试密钥');
+              return 'test-private-key';
+            }
+          })(),
     alipayPublicKey:
       process.env.NODE_ENV === 'unittest'
         ? 'test-public-key'
-        : fs.readFileSync(path.join(__dirname, '../../public_key.pem'), 'utf8'),
+        : (() => {
+            try {
+              return fs.readFileSync(path.join(__dirname, '../../public_key.pem'), 'utf8');
+            } catch (error) {
+              console.warn('支付宝公钥文件不存在，使用默认测试密钥');
+              return 'test-public-key';
+            }
+          })(),
     gateway: 'https://openapi-sandbox.dl.alipaydev.com/gateway.do',
     notifyUrl: process.env.ALIPAY_NOTIFY_URL || '	http://s93eb489.natappfree.cc/api/pay/notify',//开发环境还是采用内网穿透方案，直接使用本地地址支付宝沙箱无法访问本地服务器
     charset: 'utf-8',
