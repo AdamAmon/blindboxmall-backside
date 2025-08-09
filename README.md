@@ -268,7 +268,109 @@ npm run lint
 ```
 
 ### 测试覆盖率
-项目包含完整的单元测试和集成测试，测试覆盖率超过80%。
+项目包含完整的单元测试和集成测试
+
+执行摘要:
+```text
+Test Suites: 26 passed, 26 total
+Tests:       1106 passed, 1106 total
+Snapshots:   0 total
+Time:        30.562 s
+Ran all test suites.
+```
+
+覆盖率报告:
+```text
+-------------------------------------|---------|----------|---------|---------|-------------------------------------------------
+File                                 | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s
+-------------------------------------|---------|----------|---------|---------|-------------------------------------------------
+All files                            |   89.82 |    70.45 |   93.39 |   89.14 |                                                 
+ src                                 |     100 |      100 |     100 |     100 |                                                 
+  configuration.ts                   |     100 |      100 |     100 |     100 |                                                 
+ src/controller/address              |    73.8 |    72.72 |     100 |   73.17 |                                                 
+  address.controller.ts              |    73.8 |    72.72 |     100 |   73.17 | ...8-59,66,69,82,85,88-89,93-94,100,103,112,120 
+ src/controller/api                  |     100 |      100 |     100 |     100 |                                                 
+  api.controller.ts                  |     100 |      100 |     100 |     100 |                                                 
+ src/controller/auth                 |     100 |      100 |     100 |     100 |                                                 
+  auth.controller.ts                 |     100 |      100 |     100 |     100 |                                                 
+ src/controller/blindbox             |   81.62 |       50 |     100 |   81.21 |                                                 
+  blindbox-comment.controller.ts     |   82.81 |    41.17 |     100 |   82.25 | 27-28,69,87-88,123-124,173,197,221,245          
+  blindbox.controller.ts             |   80.99 |    53.84 |     100 |   80.67 | ...7-88,207,210-235,309,368,381,437,461,490-491 
+ src/controller/community            |   83.63 |    66.66 |     100 |      82 |                                                 
+  player-show.controller.ts          |   83.63 |    66.66 |     100 |      82 | 14,26,37,45,58,67,78-79,98                      
+ src/controller/coupon               |     100 |    33.33 |     100 |     100 |                                                 
+  coupon.controller.ts               |     100 |    33.33 |     100 |     100 | 17                                               
+  user-coupon.controller.ts          |     100 |      100 |     100 |     100 |                                                 
+ src/controller/home                 |     100 |      100 |     100 |     100 |                                                 
+  home.controller.ts                 |     100 |      100 |     100 |     100 |                                                 
+ src/controller/pay                  |    82.4 |    74.07 |   78.94 |   81.51 |                                                 
+  cart.controller.ts                 |     100 |      100 |     100 |     100 |                                                 
+  order.controller.ts                |   76.36 |       75 |      70 |   75.47 | 86-87,94-98,105-125                              
+  recharge.controller.ts             |   79.54 |    73.68 |      75 |   78.57 | 16,35,68-88                                      
+ src/controller/user                 |     100 |      100 |     100 |     100 |                                                 
+  user.controller.ts                 |     100 |      100 |     100 |     100 |                                                 
+ src/dto/address                     |     100 |      100 |     100 |     100 |                                                 
+  address.dto.ts                     |     100 |      100 |     100 |     100 |                                                 
+ src/dto/blindbox                    |     100 |      100 |     100 |     100 |                                                 
+  blindbox-comment.dto.ts            |     100 |      100 |     100 |     100 |                                                 
+  blindbox.dto.ts                    |     100 |      100 |     100 |     100 |                                                 
+ src/dto/community                   |     100 |      100 |     100 |     100 |                                                 
+  player-show.dto.ts                 |     100 |      100 |     100 |     100 |                                                 
+ src/dto/coupon                      |     100 |      100 |     100 |     100 |                                                 
+  coupon.dto.ts                      |     100 |      100 |     100 |     100 |                                                 
+  user-coupon.dto.ts                 |     100 |      100 |     100 |     100 |                                                 
+ src/dto/pay                         |     100 |      100 |     100 |     100 |                                                 
+  cart.dto.ts                        |     100 |      100 |     100 |     100 |                                                 
+  order.dto.ts                       |     100 |      100 |     100 |     100 |                                                 
+ src/dto/user                        |     100 |      100 |     100 |     100 |                                                 
+  user.dto.ts                        |     100 |      100 |     100 |     100 |                                                 
+ src/entity/address                  |     100 |      100 |     100 |     100 |                                                 
+  user_address.entity.ts             |     100 |      100 |     100 |     100 |                                                 
+ src/entity/blindbox                 |     100 |      100 |     100 |     100 |                                                 
+  blindbox-comment-like.entity.ts    |     100 |      100 |     100 |     100 |                                                 
+  blindbox-comment.entity.ts         |     100 |      100 |     100 |     100 |                                                 
+  blindbox.entity.ts                 |     100 |      100 |     100 |     100 |                                                 
+  box-item.entity.ts                 |     100 |      100 |     100 |     100 |                                                 
+ src/entity/community                |     100 |      100 |     100 |     100 |                                                 
+  player-show-comment-like.entity.ts |     100 |      100 |     100 |     100 |                                                 
+  player-show-comment.entity.ts      |     100 |      100 |     100 |     100 |                                                 
+  player-show-like.entity.ts         |     100 |      100 |     100 |     100 |                                                 
+  player-show.entity.ts              |     100 |      100 |     100 |     100 |                                                 
+ src/entity/coupon                   |     100 |      100 |     100 |     100 |                                                 
+  coupon.entity.ts                   |     100 |      100 |     100 |     100 |                                                 
+  user-coupon.entity.ts              |     100 |      100 |     100 |     100 |                                                 
+ src/entity/pay                      |     100 |      100 |     100 |     100 |                                                 
+  cart.entity.ts                     |     100 |      100 |     100 |     100 |                                                 
+  order-item.entity.ts               |     100 |      100 |     100 |     100 |                                                 
+  order.entity.ts                    |     100 |      100 |     100 |     100 |                                                 
+  recharge.entity.ts                 |     100 |      100 |     100 |     100 |                                                 
+ src/entity/user                     |     100 |      100 |     100 |     100 |                                                 
+  user.entity.ts                     |     100 |      100 |     100 |     100 |                                                 
+ src/filter                          |   88.88 |    71.42 |     100 |   85.71 |                                                 
+  default.filter.ts                  |   88.88 |    71.42 |     100 |   85.71 | 19                                               
+ src/middleware                      |   93.61 |    83.33 |     100 |   92.85 |                                                 
+  auth.middleware.ts                 |   91.89 |    83.33 |     100 |   91.17 | 77-79                                            
+  report.middleware.ts               |     100 |      100 |     100 |     100 |                                                 
+ src/service/address                 |   93.47 |       88 |     100 |   92.68 |                                                 
+  address.service.ts                 |   93.47 |       88 |     100 |   92.68 | 22,30,45                                        
+ src/service/auth                    |    97.5 |    83.33 |     100 |   97.36 |                                                 
+  auth.service.ts                    |    97.5 |    83.33 |     100 |   97.36 | 66                                               
+ src/service/blindbox                |   92.01 |    69.49 |     100 |   92.03 |                                                 
+  blindbox-comment.service.ts        |   94.66 |    81.81 |     100 |   94.44 | 127-128,154,280                                 
+  blindbox.service.ts                |   90.57 |    62.16 |     100 |   90.69 | 152-165,228,271,283                              
+ src/service/community               |     100 |    88.23 |     100 |     100 |                                                 
+  player-show.service.ts             |     100 |    88.23 |     100 |     100 | 101-109                                         
+ src/service/coupon                  |   81.92 |       80 |   77.27 |   82.43 |                                                 
+  coupon.service.ts                  |   92.59 |      100 |   77.77 |     100 |                                                 
+  user-coupon.service.ts             |   76.78 |    66.66 |   76.92 |    74.5 | 17-43                                            
+ src/service/pay                     |   80.92 |    70.58 |   82.14 |   79.86 |                                                 
+  cart.service.ts                    |     100 |      100 |     100 |     100 |                                                 
+  order.service.ts                   |   72.41 |    57.81 |      75 |   70.58 | ...,149-154,177-181,223-227,236-277,305,317-341 
+  recharge.service.ts                |   93.54 |    91.42 |   85.71 |   93.33 | 39-40,103-110                                    
+ src/service/user                    |   98.43 |      100 |   83.33 |     100 |                                                 
+  user.service.ts                    |   98.43 |      100 |   83.33 |     100 |                                                 
+-------------------------------------|---------|----------|---------|---------|-------------------------------------------------
+```
 
 ## 部署说明
 
